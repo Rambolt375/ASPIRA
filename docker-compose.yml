@@ -1,0 +1,26 @@
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: aspira-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: aspira_dev
+      POSTGRES_USER: aspira
+      POSTGRES_PASSWORD: 12345678
+
+    ports:
+      - "127.0.0.1:5432:5432"
+
+    volumes:
+      - aspira_postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aspira -d aspira_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  aspira_postgres_data:

@@ -160,7 +160,7 @@ export default function BerandaPage() {
     <div className="max-w-5xl mx-auto px-4 py-6 space-y-8">
 
       {/* ── Welcome ──────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 p-6 sm:p-8 text-white">
+      <section className="relative overflow-hidden rounded-3xl bg-linear-to-br from-emerald-600 via-emerald-700 to-teal-800 p-6 sm:p-8 text-white">
         <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-emerald-500/20 blur-2xl pointer-events-none" />
         <div className="relative">
           <p className="text-emerald-200 text-sm font-medium mb-1">
@@ -400,7 +400,7 @@ export default function BerandaPage() {
 
           {/* CTA for guests */}
           {!user && (
-            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl border border-emerald-200 p-5 text-center">
+            <div className="bg-linear-to-br from-emerald-50 to-teal-50 rounded-2xl border border-emerald-200 p-5 text-center">
               <p className="text-2xl mb-2">👋</p>
               <p className="text-sm font-semibold text-slate-800 mb-1">Bergabunglah sekarang</p>
               <p className="text-xs text-slate-500 mb-4">
