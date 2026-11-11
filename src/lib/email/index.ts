@@ -18,7 +18,10 @@ const FROM_EMAIL =
 const RESEND_TEST_RECIPIENT =
   process.env.RESEND_TEST_RECIPIENT || 'reyza1098@gmail.com';
 
-const resend = new Resend(RESEND_API_KEY);
+function getResendClient(): Resend | null {
+  if (!RESEND_API_KEY) return null;
+  return new Resend(RESEND_API_KEY);
+}
 
 export interface EmailPayload {
   to: string | string[];
@@ -29,7 +32,8 @@ export interface EmailPayload {
 export async function sendEmail(
   payload: EmailPayload
 ): Promise<{ ok: boolean; deliveredTo?: string; error?: string }> {
-  if (!RESEND_API_KEY) {
+  const resend = getResendClient();
+  if (!resend) {
     console.warn('[ASPIRA Email] RESEND_API_KEY tidak tersedia.');
     return { ok: false, error: 'RESEND_API_KEY belum dikonfigurasi.' };
   }
