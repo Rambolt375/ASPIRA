@@ -161,6 +161,20 @@ export async function updateReportStatus(params: {
       },
     });
 
+    // If evidence photo is provided (physical progress documentation), record to ReportMedia
+    if (params.evidencePhotoUrl) {
+      await tx.reportMedia.create({
+        data: {
+          reportId: params.reportId,
+          fileUrl: params.evidencePhotoUrl,
+          mediaType: 'IMAGE',
+          isAfterPhoto: params.newStatus === 'DIATASI',
+          isDirectCapture: true,
+          captureSource: 'CAMERA_DIRECT',
+        },
+      });
+    }
+
     // If reaching VERIFIKASI and author hasn't received reward yet, award points
     if (params.newStatus === 'VERIFIKASI') {
       const idempotencyKey = `report-verified-${current.id}`;

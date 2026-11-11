@@ -34,6 +34,8 @@ interface ReportItem {
   media: { fileUrl: string }[];
   statusHistory: {
     newStatus: string;
+    note?: string | null;
+    evidencePhotoUrl?: string | null;
     actor: { name: string };
     createdAt: string;
   }[];
@@ -419,13 +421,30 @@ export default function DinasDashboardPage() {
                         </span>
                       </td>
 
-                      {/* 3. Status Siklus */}
-                      <td className="py-4 px-4">
+                      {/* 3. Status Siklus & Bukti Fisik Lapangan */}
+                      <td className="py-4 px-4 max-w-[180px]">
                         <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
                           {r.status}
                         </span>
+
+                        {/* Dokumentasi Foto Lapangan jika ada */}
+                        {r.statusHistory && r.statusHistory[0]?.evidencePhotoUrl && (
+                          <div className="mt-1.5 flex items-center gap-1.5">
+                            <a
+                              href={r.statusHistory[0].evidencePhotoUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 transition-colors"
+                              title="Lihat foto bukti fisik lapangan"
+                            >
+                              <span>📸</span>
+                              <span>Bukti Fisik</span>
+                            </a>
+                          </div>
+                        )}
+
                         {r.statusHistory && r.statusHistory[0] && (
-                          <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500">
+                          <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500 line-clamp-1">
                             oleh {r.statusHistory[0].actor.name}
                           </p>
                         )}
