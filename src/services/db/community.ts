@@ -97,6 +97,91 @@ export async function createCommunityPost(input: CreatePostInput) {
 }
 
 /**
+ * Get a single community post by ID.
+ */
+export async function getCommunityPostById(id: string, userId?: string) {
+  const post = await prisma.communityPost.findUnique({
+    where: { id },
+    include: {
+      author: {
+        select: {
+          id: true,
+          name: true,
+          avatarUrl: true,
+          role: true,
+          reputationLevel: true,
+        },
+      },
+      votes: true,
+      _count: {
+        select: { comments: true },
+      },
+    },
+  });
+
+  if (!post) return null;
+
+  const upvotes = post.votes.filter((v) => v.value > 0).length;
+  const downvotes = post.votes.filter((v) => v.value < 0).length;
+  const userVote = userId
+    ? post.votes.find((v) => v.userId === userId)?.value ?? 0
+    : 0;
+
+  return {
+    id: post.id,
+    title: post.title,
+    content: post.content,
+    type: post.type,
+    category: post.category,
+    isPinned: post.isPinned,
+    authorId: post.authorId,
+    authorName: post.author.name,
+    authorAvatar: post.author.avatarUrl,
+    authorBadge: post.author.reputationLevel,
+    linkedReportId: post.linkedReportId,
+    upvotes,
+    downvotes,
+    userVote,
+    commentCount: post._count.comments,
+    createdAt: post.createdAt.toISOString(),
+    updatedAt: post.updatedAt.toISOString(),
+  };
+}
+
+/**
+ * Get all comments for a community post.
+ */
+export async function getPostComments(postId: string) {
+  const comments = await prisma.communityComment.findMany({
+    where: { postId },
+    include: {
+      author: {
+        select: {
+          id: true,
+          name: true,
+          avatarUrl: true,
+          role: true,
+          reputationLevel: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  return comments.map((c) => ({
+    id: c.id,
+    postId: c.postId,
+    parentId: c.parentId,
+    authorId: c.authorId,
+    authorName: c.author.name,
+    authorAvatar: c.author.avatarUrl,
+    authorBadge: c.author.reputationLevel,
+    content: c.content,
+    createdAt: c.createdAt.toISOString(),
+  }));
+}
+
+/**
  * Add a comment or reply to a post.
  */
 export async function addCommunityComment(input: CreateCommentInput) {

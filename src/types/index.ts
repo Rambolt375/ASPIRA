@@ -154,6 +154,8 @@ export interface CommunityCommentItem {
   authorId: string;
   authorName: string;
   authorAvatar?: string | null;
+  authorBadge?: string | null;
+  authorRole?: string | null;
   content: string;
   createdAt: string;
   replies?: CommunityCommentItem[];
