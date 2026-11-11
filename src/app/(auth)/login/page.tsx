@@ -139,50 +139,8 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        {/* Quick Role Fillers for Evaluation */}
-        <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2.5 text-center">
-            Pilihan Akun Uji Coba:
-          </p>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setEmail('warga@aspira.id');
-                setPassword('Warga123!');
-              }}
-              className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-700 text-left transition-colors"
-            >
-              <span className="block text-xs font-bold text-slate-800 dark:text-slate-200">👤 Warga</span>
-              <span className="block text-[10px] text-slate-400 truncate">warga@aspira.id</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setEmail('petugas@pupr.bogor.go.id');
-                setPassword('Petugas123!');
-              }}
-              className="p-2 rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-950/40 hover:bg-blue-100/60 text-left transition-colors"
-            >
-              <span className="block text-xs font-bold text-blue-700 dark:text-blue-300">🛠️ Petugas</span>
-              <span className="block text-[10px] text-blue-500/80 truncate">PUPR Lapangan</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setEmail('admin@aspira.bogor.go.id');
-                setPassword('Admin123!');
-              }}
-              className="p-2 rounded-xl border border-purple-200 dark:border-purple-900/50 bg-purple-50/50 dark:bg-purple-950/40 hover:bg-purple-100/60 text-left transition-colors"
-            >
-              <span className="block text-xs font-bold text-purple-700 dark:text-purple-300">🏛️ Pimpinan</span>
-              <span className="block text-[10px] text-purple-500/80 truncate">Pemkot Bogor</span>
-            </button>
-          </div>
-        </div>
-
         {/* Divider */}
-        <div className="my-5 flex items-center gap-3">
+        <div className="my-6 flex items-center gap-3">
           <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
           <span className="text-xs text-slate-400 font-medium">atau</span>
           <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
