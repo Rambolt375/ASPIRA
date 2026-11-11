@@ -22,3 +22,4 @@ export async function GET(
     return NextResponse.json({ error: 'Gagal memuat rincian postingan.' }, { status: 500 });
   }
 }
+

@@ -86,6 +86,7 @@ export interface Report {
   statusHistory: StatusHistoryEntry[];
   authorId: string;
   authorName: string;
+  authorEmail?: string | null;
   assignedAgency?: string | null;
   slaDeadline?: string | null;
   afterPhotoUrl?: string | null;
@@ -136,6 +137,7 @@ export interface CommunityPostItem {
   isPinned: boolean;
   authorId: string;
   authorName: string;
+  authorEmail?: string | null;
   authorAvatar?: string | null;
   authorBadge?: string | null;
   linkedReportId?: string | null;
@@ -153,6 +155,7 @@ export interface CommunityCommentItem {
   parentId?: string | null;
   authorId: string;
   authorName: string;
+  authorEmail?: string | null;
   authorAvatar?: string | null;
   authorBadge?: string | null;
   authorRole?: string | null;

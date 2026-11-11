@@ -25,6 +25,7 @@ interface ReportItem {
   createdAt: string;
   author: {
     name: string;
+    email?: string | null;
     phone?: string | null;
   };
   verification?: {

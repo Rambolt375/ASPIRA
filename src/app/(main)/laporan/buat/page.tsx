@@ -1,12 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { useAuthStore } from '@/stores/authStore';
 import { Button, Input } from '@/components/ui';
 import NativeCameraModal, { type CapturedPhoto, compressFile } from '@/components/camera/NativeCameraModal';
 import { REPORT_CATEGORIES, SEVERITY_LEVELS } from '@/constants/categories';
 import type { ReportCategory, SeverityLevel, AiTriageResult } from '@/types';
+
+// LocationPickerMap must be loaded client-side only (Leaflet requires browser APIs)
+const LocationPickerMap = dynamic(
+  () => import('@/components/map/LocationPickerMap'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-72 rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse flex items-center justify-center text-slate-400 text-sm">
+        🗺️ Memuat peta…
+      </div>
+    ),
+  }
+);
 
 // Bogor Kecamatan Centroids for nearest-location auto calculation
 const BOGOR_KECAMATAN_CENTROIDS: Record<string, { lat: number; lng: number }> = {
@@ -17,6 +31,18 @@ const BOGOR_KECAMATAN_CENTROIDS: Record<string, { lat: number; lng: number }> = 
   'Bogor Barat': { lat: -6.5850, lng: 106.7650 },
   'Tanah Sareal': { lat: -6.5600, lng: 106.7900 },
 };
+
+// Quick landmark presets for Kota Bogor
+const BOGOR_LANDMARKS = [
+  { name: 'Kebun Raya', icon: '🌿', lat: -6.5969, lng: 106.7996, address: 'Jl. Ir. H. Juanda, Paledang, Bogor Tengah' },
+  { name: 'Balaikota', icon: '🏛️', lat: -6.5932, lng: 106.7897, address: 'Jl. Ir. H. Juanda No.10, Pabaton, Bogor Tengah' },
+  { name: 'Stasiun Bogor', icon: '🚆', lat: -6.5951, lng: 106.7975, address: 'Jl. Nyi Raja Permas, Cibogor, Bogor Tengah' },
+  { name: 'Botani Square', icon: '🛍️', lat: -6.5985, lng: 106.8095, address: 'Jl. Raya Pajajaran No.40, Tegallega, Bogor Tengah' },
+  { name: 'Suryakencana', icon: '🏯', lat: -6.6025, lng: 106.8010, address: 'Jl. Suryakencana, Babakan Pasar, Bogor Tengah' },
+  { name: 'RS PMI Bogor', icon: '🏥', lat: -6.5912, lng: 106.8055, address: 'Jl. Raya Pajajaran No.80, Sukasari, Bogor Utara' },
+  { name: 'Terminal Baranang', icon: '🚌', lat: -6.6082, lng: 106.8162, address: 'Baranangsiang, Bogor Timur' },
+  { name: 'Taman Sempur', icon: '🌳', lat: -6.5895, lng: 106.8015, address: 'Sempur, Bogor Tengah' },
+];
 
 const KECAMATAN_BOGOR = [
   'Bogor Tengah',
@@ -81,6 +107,7 @@ export default function BuatLaporanPage() {
   const [lat, setLat] = useState<number>(-6.5971);
   const [lng, setLng] = useState<number>(106.806);
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [targetEmail, setTargetEmail] = useState('');
 
   // Media states with Canvas Compression
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
@@ -92,6 +119,11 @@ export default function BuatLaporanPage() {
   // GPS Feedback States
   const [gpsLoading, setGpsLoading] = useState(false);
   const [gpsStatus, setGpsStatus] = useState<string | null>(null);
+
+  // Location search (Nominatim)
+  const [locationSearchQuery, setLocationSearchQuery] = useState('');
+  const [locationSearchResults, setLocationSearchResults] = useState<Array<{ display_name: string; lat: string; lon: string }>>([]);
+  const [searchingLocation, setSearchingLocation] = useState(false);
 
   // AI Triage & Submitting
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
@@ -160,23 +192,100 @@ export default function BuatLaporanPage() {
             setLng(106.8060);
             setKecamatan('Bogor Tengah');
             setAddress((prev) => prev || 'Pusat Kota Bogor (Titik Acuan)');
-            setGpsStatus('⚠️ GPS satelit lemah, koordinat dialihkan ke Pusat Kota Bogor.');
+            setGpsStatus('⚠️ GPS tidak terdeteksi (umum pada laptop/PC). Geser pin pada peta atau ketik lokasi di bawah.');
             setGpsLoading(false);
           },
-          { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
+          { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
         );
       },
-      { enableHighAccuracy: true, timeout: 5000, maximumAge: 10000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
     );
   }
 
-  // Handle camera capture from NativeCameraModal
-  function handleCameraCapture(photo: CapturedPhoto) {
-    setImageDataUrl(photo.dataUrl);
-    setCompressedSizeKb(photo.sizeKb);
-    setIsDirectCapture(photo.isDirectCapture);
-    setIsCameraModalOpen(false);
-    triggerHaptic('success');
+  // Update map pin and reverse-geocode when marker is dragged / map is clicked
+  const handleMapLocationChange = useCallback(async (newLat: number, newLng: number) => {
+    setLat(newLat);
+    setLng(newLng);
+    const nearest = findNearestBogorKecamatan(newLat, newLng);
+    setKecamatan(nearest);
+    setGpsStatus(`📍 Titik dipilih: ${newLat.toFixed(5)}, ${newLng.toFixed(5)}`);
+    // Reverse geocode via Nominatim (silent fail)
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${newLat}&lon=${newLng}&format=json&zoom=17`,
+        { headers: { Accept: 'application/json' } }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const displayName: string = data.display_name || `${nearest}, Kota Bogor`;
+        // Keep first 3 comma-separated parts for a concise address
+        setAddress(displayName.split(',').slice(0, 3).join(',').trim());
+      }
+    } catch { /* silent */ }
+  }, []);
+
+  // Nominatim forward geocode search (bounded to Kota Bogor viewport)
+  const handleLocationSearch = useCallback(async (query: string) => {
+    if (!query.trim()) { setLocationSearchResults([]); return; }
+    setSearchingLocation(true);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query + ' Kota Bogor')}&format=json&limit=5&countrycodes=id&bounded=1&viewbox=106.70,-6.70,106.90,-6.50`,
+        { headers: { Accept: 'application/json' } }
+      );
+      if (res.ok) {
+        const results = await res.json();
+        setLocationSearchResults(results);
+      }
+    } catch { /* silent */ }
+    setSearchingLocation(false);
+  }, []);
+
+  // Handle direct camera capture
+  async function startCamera() {
+    try {
+      triggerHaptic('light');
+      setIsCameraActive(true);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+      });
+      mediaStreamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+      }
+    } catch {
+      setError('Tidak dapat mengakses kamera peramban. Silakan unggah foto dari galeri.');
+      setIsCameraActive(false);
+    }
+  }
+
+  function capturePhoto() {
+    if (!videoRef.current) return;
+    triggerHaptic('medium');
+    setIsCompressing(true);
+
+    try {
+      // Compress via offscreen HTML5 canvas to max 1280x720, quality 0.75
+      const { dataUrl, sizeKb } = compressCanvas(videoRef.current, 1280, 720, 0.75);
+      setImageDataUrl(dataUrl);
+      setCompressedSizeKb(sizeKb);
+      setIsDirectCapture(true);
+      stopCamera();
+      triggerHaptic('success');
+    } catch {
+      setError('Gagal memproses foto dari kamera.');
+    } finally {
+      setIsCompressing(false);
+    }
+  }
+
+  function stopCamera() {
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((t) => t.stop());
+      mediaStreamRef.current = null;
+    }
+    setIsCameraActive(false);
   }
 
   // Handle gallery file input with automatic Canvas Compression
@@ -266,28 +375,54 @@ export default function BuatLaporanPage() {
           authorId: user.id,
           mediaFiles: imageDataUrl
             ? [
-                {
-                  fileUrl: imageDataUrl,
-                  mediaType: 'image/jpeg',
-                  isDirectCapture,
-                  captureSource: isDirectCapture ? 'CAMERA_DIRECT' : 'GALLERY',
-                },
-              ]
+              {
+                fileUrl: imageDataUrl,
+                mediaType: 'image/jpeg',
+                isDirectCapture,
+                captureSource: isDirectCapture ? 'CAMERA_DIRECT' : 'GALLERY',
+              },
+            ]
             : [],
           verificationResult: aiResult
             ? {
-                authenticityScore: aiResult.authenticityScore ?? (isPemeriksa ? 0.98 : 0.85),
-                isLegitimate: aiResult.isLegitimate ?? true,
-                confidence: aiResult.confidence ?? 0.85,
-                suggestedCategory: category,
-                suggestedSeverity: severity,
-              }
+              authenticityScore: aiResult.authenticityScore ?? (isPemeriksa ? 0.98 : 0.85),
+              isLegitimate: aiResult.isLegitimate ?? true,
+              confidence: aiResult.confidence ?? 0.85,
+              suggestedCategory: category,
+              suggestedSeverity: severity,
+            }
             : undefined,
         }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Gagal mengirim laporan.');
+
+      // Kirim email konfirmasi tanda terima resmi via Resend
+      try {
+        const extraEmails = targetEmail
+          .split(/[,;\s]+/)
+          .map((e) => e.trim())
+          .filter(Boolean);
+
+        void fetch('/api/email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'REPORT_CONFIRMED',
+            reportId: data.report.id,
+            ticketNumber: data.report.ticketNumber,
+            title: data.report.title,
+            authorName: user.name || 'Warga Bogor',
+            authorEmail: user.email,
+            extraEmails,
+            category: data.report.category,
+            address: data.report.address,
+          }),
+        });
+      } catch {
+        // Silent fail: email dispatch does not block redirect
+      }
 
       triggerHaptic('success');
       router.push(`/laporan/${data.report.id}`);
@@ -406,13 +541,12 @@ export default function BuatLaporanPage() {
                   if (s.num < step) goToStep(s.num);
                 }}
                 disabled={s.num > step}
-                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all touch-manipulation ${
-                  step === s.num
-                    ? 'bg-emerald-600 text-white ring-4 ring-emerald-100 scale-105 shadow-sm'
-                    : step > s.num
+                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all touch-manipulation ${step === s.num
+                  ? 'bg-emerald-600 text-white ring-4 ring-emerald-100 scale-105 shadow-sm'
+                  : step > s.num
                     ? 'bg-emerald-700 text-white hover:bg-emerald-800 cursor-pointer'
                     : 'bg-slate-200 text-slate-500 cursor-not-allowed'
-                }`}
+                  }`}
               >
                 {step > s.num ? '✓' : s.num}
               </button>
@@ -455,11 +589,10 @@ export default function BuatLaporanPage() {
                       triggerHaptic('light');
                       setCategory(key as ReportCategory);
                     }}
-                    className={`min-h-[76px] p-4 rounded-2xl border text-center transition-all flex flex-col items-center justify-center gap-2 touch-manipulation active:scale-[0.97] ${
-                      selected
-                        ? 'border-emerald-600 bg-emerald-50/70 shadow-sm ring-2 ring-emerald-500/20'
-                        : 'border-slate-200 hover:border-slate-300 bg-white active:bg-slate-50'
-                    }`}
+                    className={`min-h-[76px] p-4 rounded-2xl border text-center transition-all flex flex-col items-center justify-center gap-2 touch-manipulation active:scale-[0.97] ${selected
+                      ? 'border-emerald-600 bg-emerald-50/70 shadow-sm ring-2 ring-emerald-500/20'
+                      : 'border-slate-200 hover:border-slate-300 bg-white active:bg-slate-50'
+                      }`}
                   >
                     <span className="text-2xl">{cat.icon}</span>
                     <span className={`text-xs font-bold leading-tight ${selected ? 'text-emerald-900' : 'text-slate-700'}`}>
@@ -486,15 +619,14 @@ export default function BuatLaporanPage() {
                         triggerHaptic('light');
                         setSeverity(sev);
                       }}
-                      className={`min-h-[44px] py-2.5 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center touch-manipulation active:scale-95 ${
-                        isSel
-                          ? sev === 'KRITIS'
-                            ? 'bg-red-600 text-white border-red-600 shadow-sm ring-2 ring-red-200'
-                            : sev === 'TINGGI'
+                      className={`min-h-[44px] py-2.5 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center touch-manipulation active:scale-95 ${isSel
+                        ? sev === 'KRITIS'
+                          ? 'bg-red-600 text-white border-red-600 shadow-sm ring-2 ring-red-200'
+                          : sev === 'TINGGI'
                             ? 'bg-amber-500 text-white border-amber-500 shadow-sm ring-2 ring-amber-200'
                             : 'bg-emerald-600 text-white border-emerald-600 shadow-sm ring-2 ring-emerald-200'
-                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 active:bg-slate-100'
-                      }`}
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 active:bg-slate-100'
+                        }`}
                     >
                       {SEVERITY_LEVELS[sev]?.label ?? sev}
                     </button>
@@ -525,11 +657,10 @@ export default function BuatLaporanPage() {
                   {/* Authenticity Badge */}
                   <div className="absolute top-3 left-3">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold shadow-sm ${
-                        isDirectCapture
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-slate-700 dark:bg-slate-800 text-white'
-                      }`}
+                      className={`px-3 py-1 rounded-full text-xs font-bold shadow-sm ${isDirectCapture
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-700 text-white'
+                        }`}
                     >
                       {isDirectCapture ? '✓ Kamera Langsung (Otentik)' : '📁 Unggahan Galeri'}
                     </span>
@@ -644,36 +775,109 @@ export default function BuatLaporanPage() {
                 />
               </div>
 
-              {/* Quick GPS Geolocation Button & Feedback */}
-              <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-2.5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              {/* Location Picker: GPS + Map + Search + Landmarks */}
+              <div className="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 space-y-4">
+
+                {/* Header row: label + GPS button */}
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
                   <div>
-                    <label className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                      <span>📍</span> Titik Geografis GPS Kota Bogor
-                    </label>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Deteksi otomatis satelit GPS dan rekomendasi kecamatan terdekat.
+                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                      📍 Titik Lokasi Laporan
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Klik peta, geser pin, cari nama jalan, atau gunakan GPS otomatis
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={handleGetGpsLocation}
                     disabled={gpsLoading}
-                    className="min-h-[44px] px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 transition-all touch-manipulation active:scale-95"
+                    className="shrink-0 min-h-[40px] px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-60 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 transition-all touch-manipulation active:scale-95"
                   >
                     <span>🎯</span>
-                    <span>{gpsLoading ? 'Mendeteksi...' : 'Ambil Koordinat GPS Cepat'}</span>
+                    <span>{gpsLoading ? 'Mendeteksi…' : 'Gunakan GPS'}</span>
                   </button>
                 </div>
 
+                {/* GPS status feedback */}
                 {gpsStatus && (
-                  <div className="p-2.5 rounded-xl bg-white border border-emerald-200 text-xs font-semibold text-emerald-800 flex items-center gap-2">
-                    <span className="animate-spin text-sm">🧭</span>
+                  <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-700 text-xs font-medium text-emerald-800 dark:text-emerald-300 flex items-start gap-2">
+                    <span>🧭</span>
                     <span>{gpsStatus}</span>
                   </div>
                 )}
 
-                <p className="text-xs text-slate-600 font-mono">
+                {/* Quick landmark chips */}
+                <div>
+                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">📌 Patokan Cepat:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {BOGOR_LANDMARKS.map((lm) => (
+                      <button
+                        key={lm.name}
+                        type="button"
+                        onClick={() => {
+                          setLat(lm.lat);
+                          setLng(lm.lng);
+                          setKecamatan(findNearestBogorKecamatan(lm.lat, lm.lng));
+                          setAddress(lm.address);
+                          setGpsStatus(`📍 Titik: ${lm.name}`);
+                        }}
+                        className="px-3 py-1.5 rounded-full bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-emerald-50 hover:border-emerald-400 dark:hover:bg-emerald-900/30 transition-colors touch-manipulation"
+                      >
+                        {lm.icon} {lm.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Nominatim place search */}
+                <div className="relative">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="🔍 Cari nama jalan, gedung, atau tempat di Bogor…"
+                      value={locationSearchQuery}
+                      onChange={(e) => {
+                        setLocationSearchQuery(e.target.value);
+                        handleLocationSearch(e.target.value);
+                      }}
+                      className="w-full min-h-[44px] rounded-xl border border-slate-300 dark:border-slate-600 px-4 py-2.5 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                    />
+                    {searchingLocation && (
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 animate-pulse">mencari…</span>
+                    )}
+                  </div>
+                  {locationSearchResults.length > 0 && (
+                    <div className="absolute z-50 mt-1 w-full bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-lg overflow-hidden">
+                      {locationSearchResults.map((r, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => {
+                            const newLat = parseFloat(r.lat);
+                            const newLng = parseFloat(r.lon);
+                            setLocationSearchQuery('');
+                            setLocationSearchResults([]);
+                            handleMapLocationChange(newLat, newLng);
+                          }}
+                          className="w-full text-left px-4 py-3 text-xs text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border-b border-slate-100 dark:border-slate-700 last:border-0 transition-colors"
+                        >
+                          📍 {r.display_name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Interactive Leaflet map */}
+                <LocationPickerMap
+                  lat={lat}
+                  lng={lng}
+                  onLocationChange={handleMapLocationChange}
+                />
+
+                {/* Coordinate readout */}
+                <p className="text-xs font-mono text-slate-500 dark:text-slate-400">
                   Koordinat: {lat.toFixed(6)}, {lng.toFixed(6)}
                 </p>
               </div>
@@ -688,6 +892,13 @@ export default function BuatLaporanPage() {
                     onChange={(e) => {
                       triggerHaptic('light');
                       setKecamatan(e.target.value);
+                      // Move the map to that kecamatan's centroid
+                      const centroid = BOGOR_KECAMATAN_CENTROIDS[e.target.value];
+                      if (centroid) {
+                        setLat(centroid.lat);
+                        setLng(centroid.lng);
+                        setGpsStatus(`📍 Pusat ${e.target.value}`);
+                      }
                     }}
                     className="min-h-[44px] w-full rounded-2xl border border-slate-300 px-3.5 py-2.5 text-base sm:text-sm bg-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                   >
@@ -717,6 +928,20 @@ export default function BuatLaporanPage() {
                   className="min-h-[44px] text-base sm:text-sm"
                   required
                 />
+              </div>
+
+              <div>
+                <Input
+                  type="email"
+                  label="Email Notifikasi Salinan (Opsional)"
+                  placeholder={`Contoh: ryo@example.com (default ke akun: ${user?.email || 'email Anda'})`}
+                  value={targetEmail}
+                  onChange={(e) => setTargetEmail(e.target.value)}
+                  className="min-h-[44px] text-base sm:text-sm"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Salinan tanda terima tiket dan setiap pembaruan progres akan dikirim ke akun Anda ({user?.email || '—'}) dan email target di atas.
+                </p>
               </div>
 
               <div className="pt-1">
