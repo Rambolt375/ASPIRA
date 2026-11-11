@@ -143,6 +143,9 @@ export function AppSidebar({ hideLogo = false, onNavigate }: { hideLogo?: boolea
     router.push('/login');
   }
 
+  const isDinas = user?.role === 'PETUGAS' || user?.role === 'LOCAL_GOVERNMENT' || user?.role === 'ADMIN';
+  const visibleNavItems = navItems.filter((item) => (item.href === '/dinas' ? isDinas : true));
+
   return (
     <aside className="flex flex-col h-full bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors">
       {/* Logo & Theme Toggle */}
@@ -160,7 +163,7 @@ export function AppSidebar({ hideLogo = false, onNavigate }: { hideLogo?: boolea
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navItems.map((item) => (
+        {visibleNavItems.map((item) => (
           <NavLink key={item.href} item={item} onClick={onNavigate} />
         ))}
       </nav>
@@ -213,16 +216,19 @@ export function AppSidebar({ hideLogo = false, onNavigate }: { hideLogo?: boolea
 
 export function MobileNav() {
   const pathname = usePathname();
+  const { user } = useAuthStore();
 
   // Hide bottom nav on report creation wizard to give full ergonomic space to form actions
   if (pathname === '/lapor' || pathname === '/laporan/buat') {
     return null;
   }
 
+  const isDinas = user?.role === 'PETUGAS' || user?.role === 'LOCAL_GOVERNMENT' || user?.role === 'ADMIN';
+
   const mobileItems = [
     { href: '/beranda', label: 'Beranda', icon: navItems[0].icon },
     { href: '/laporan', label: 'Laporan', icon: navItems[1].icon },
-    { href: '/dinas', label: 'Dinas', icon: navItems[6].icon },
+    ...(isDinas ? [{ href: '/dinas', label: 'Dinas', icon: navItems[6].icon }] : []),
     { href: '/komunitas', label: 'Komunitas', icon: navItems[2].icon },
     { href: '/peta', label: 'Peta', icon: navItems[4].icon },
   ];

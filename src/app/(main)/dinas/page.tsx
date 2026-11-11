@@ -7,7 +7,6 @@ import DinasStatsCards from '@/components/dinas/DinasStatsCards';
 import DinasStatusModal from '@/components/dinas/DinasStatusModal';
 import DinasAssignModal from '@/components/dinas/DinasAssignModal';
 import DinasAnnouncementModal from '@/components/dinas/DinasAnnouncementModal';
-import RoleQuickSwitch from '@/components/dinas/RoleQuickSwitch';
 import type { ReportStatus, SeverityLevel } from '@prisma/client';
 
 interface ReportItem {
@@ -114,12 +113,101 @@ export default function DinasDashboardPage() {
     fetchReports();
   }, [fetchStats, fetchReports]);
 
+  const isDinas = user?.role === 'PETUGAS' || user?.role === 'LOCAL_GOVERNMENT' || user?.role === 'ADMIN';
+  const isLeader = user?.role === 'ADMIN' || user?.role === 'LOCAL_GOVERNMENT';
+
+  // 1. Guard: Jika bukan aparat dinas/petugas, tampilkan halaman pembatas akses yang jelas
+  if (!isDinas) {
+    return (
+      <div className="max-w-xl mx-auto px-4 py-16 text-center">
+        <div className="w-16 h-16 mx-auto rounded-3xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 flex items-center justify-center text-3xl mb-5 shadow-xs">
+          🏛️
+        </div>
+        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+          Akses Khusus Aparatur Pemerintah
+        </span>
+        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight mt-3">
+          Portal Operasional Dinas Terbatas
+        </h1>
+        <p className="mt-2.5 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+          Halaman ini merupakan portal intranet kendali disposisi penugasan teknis dinas, pengawasan SLA kota, dan eskalasi perbaikan fisik Kota Bogor.
+        </p>
+
+        <div className="mt-6 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 text-left space-y-2">
+          <p className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <span>ℹ️</span> Status Akses Akun:
+          </p>
+          <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+            <span>Nama Pengguna</span>
+            <strong className="text-slate-800 dark:text-slate-200">{user?.name || 'Tamu / Belum Masuk'}</strong>
+          </div>
+          <div className="flex items-center justify-between py-1">
+            <span>Peran Akses</span>
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+              {user?.role || 'USER (Warga Biasa)'}
+            </span>
+          </div>
+          <p className="text-[11px] text-slate-500 dark:text-slate-500 pt-2 border-t border-slate-100 dark:border-slate-800">
+            Sebagai warga, Anda dapat memantau keterbukaan perbaikan laporan Anda melalui menu <strong>Daftar Laporan</strong> atau <strong>City Pulse</strong>. Untuk mengakses disposisi, silakan masuk menggunakan akun petugas/dinas resmi.
+          </p>
+        </div>
+
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Link
+            href="/beranda"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-colors"
+          >
+            Kembali ke Beranda Warga
+          </Link>
+          <Link
+            href="/login"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold transition-colors"
+          >
+            Masuk Akun Dinas / Petugas
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 transition-colors">
-      {/* 1. Simulator Switcher (Judges Persona Switcher) */}
-      <RoleQuickSwitch />
+      {/* 2. Hierarki Dinas & Identitas Aparatur Aktif */}
+      <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xl shrink-0">
+            {isLeader ? '🏛️' : '🛠️'}
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-extrabold text-slate-900 dark:text-slate-100">
+                {user?.name}
+              </span>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                isLeader
+                  ? 'bg-purple-100 dark:bg-purple-950/80 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800'
+                  : 'bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+              }`}>
+                {isLeader ? 'Tingkat 1: Pimpinan / Koordinator Wilayah Kota' : 'Tingkat 2: Pelaksana Teknis Lapangan (Dinas)'}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              {isLeader
+                ? 'Wewenang Eksekutif: Disposisi Antar-Dinas (PUPR, Dishub, DLH, BPBD), Penetapan Target SLA, dan Siaran Darurat Kota.'
+                : 'Wewenang Teknis: Pelaksanaan Pekerjaan Fisik, Update Status Pengerjaan (Dalam Penanganan), dan Bukti Foto Penyelesaian.'}
+            </p>
+          </div>
+        </div>
 
-      {/* 2. Page Header */}
+        <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
+          <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            Sesi Terhubung
+          </span>
+        </div>
+      </div>
+
+      {/* 3. Page Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
         <div>
           <div className="flex items-center gap-2 mb-2">
@@ -140,12 +228,14 @@ export default function DinasDashboardPage() {
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          <button
-            onClick={() => setIsAnnouncementModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold shadow-sm transition-all"
-          >
-            📢 Siarkan Pengumuman Kota
-          </button>
+          {isLeader && (
+            <button
+              onClick={() => setIsAnnouncementModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold shadow-sm transition-all"
+            >
+              📢 Siarkan Pengumuman Kota
+            </button>
+          )}
           <button
             onClick={() => {
               fetchStats();
@@ -397,17 +487,19 @@ export default function DinasDashboardPage() {
                       {/* 7. Action Buttons */}
                       <td className="py-4 px-4 sm:px-5 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => setActiveReportForAssign(r)}
-                            className="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 text-blue-700 dark:text-blue-300 font-bold text-xs border border-blue-200/80 dark:border-blue-800 transition-colors"
-                          >
-                            Disposisi
-                          </button>
+                          {isLeader && (
+                            <button
+                              onClick={() => setActiveReportForAssign(r)}
+                              className="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 text-blue-700 dark:text-blue-300 font-bold text-xs border border-blue-200/80 dark:border-blue-800 transition-colors"
+                            >
+                              Disposisi
+                            </button>
+                          )}
                           <button
                             onClick={() => setActiveReportForStatus(r)}
                             className="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 font-bold text-xs border border-emerald-200/80 dark:border-emerald-800 transition-colors"
                           >
-                            Ubah Status
+                            {isLeader ? 'Ubah Status' : 'Lapor Progres Fisik'}
                           </button>
                           <Link
                             href={`/laporan/${r.id}`}
