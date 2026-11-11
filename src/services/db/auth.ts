@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
 import type { User, Role } from '@prisma/client';
+import { ensureOfficialUsers, OFFICIAL_DEFAULT_ACCOUNTS } from '@/services/db/seed-users';
 
 export interface RegisterInput {
   email: string;
@@ -91,19 +92,46 @@ export async function registerUser(input: RegisterInput): Promise<SafeUser> {
 }
 
 /**
- * Authenticate citizen with email and password.
+ * Authenticate citizen or officer with email and password.
+ * Automatically ensures default official accounts exist if logging in with an official address.
  */
 export async function authenticateUser(input: LoginInput): Promise<SafeUser> {
-  const user = await prisma.user.findUnique({
-    where: { email: input.email.toLowerCase().trim() },
+  const normalizedEmail = input.email.toLowerCase().trim();
+
+  // If this email is one of the recognized official/demo accounts, ensure default accounts exist
+  const isOfficialEmail = OFFICIAL_DEFAULT_ACCOUNTS.some(
+    (acc) => acc.email.toLowerCase() === normalizedEmail,
+  );
+
+  let user = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
   });
+
+  if (!user && isOfficialEmail) {
+    await ensureOfficialUsers();
+    user = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
+  }
 
   if (!user) {
     throw new Error('Email atau kata sandi tidak valid.');
   }
 
-  const isValid = await bcrypt.compare(input.password, user.passwordHash);
-  if (!isValid) {
+  let isValid = await bcrypt.compare(input.password, user.passwordHash);
+
+  // If password comparison failed for an official account, attempt sync and recheck
+  if (!isValid && isOfficialEmail) {
+    await ensureOfficialUsers();
+    user = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
+    if (user) {
+      isValid = await bcrypt.compare(input.password, user.passwordHash);
+    }
+  }
+
+  if (!isValid || !user) {
     throw new Error('Email atau kata sandi tidak valid.');
   }
 

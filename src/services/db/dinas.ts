@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma';
+import { ensureOfficialUsers } from '@/services/db/seed-users';
 import type {
   ReportStatus,
   ReportCategory,
@@ -392,7 +393,7 @@ export async function getDinasReports(filters: DinasReportFilter = {}) {
  */
 export async function getAvailableOfficers() {
   try {
-    const officers = await prisma.user.findMany({
+    let officers = await prisma.user.findMany({
       where: {
         role: { in: ['PETUGAS', 'LOCAL_GOVERNMENT', 'ADMIN'] },
       },
@@ -408,10 +409,28 @@ export async function getAvailableOfficers() {
     });
 
     if (officers.length === 0) {
+      await ensureOfficialUsers();
+      officers = await prisma.user.findMany({
+        where: {
+          role: { in: ['PETUGAS', 'LOCAL_GOVERNMENT', 'ADMIN'] },
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          kelurahan: true,
+          kecamatan: true,
+        },
+        orderBy: { name: 'asc' },
+      });
+    }
+
+    if (officers.length === 0) {
       return [
-        { id: 'officer-pupr', name: 'Budi Santoso (Dinas PUPR)', email: 'budi@pupr.bogor.go.id', role: 'PETUGAS', kelurahan: 'Babakan', kecamatan: 'Bogor Tengah' },
-        { id: 'officer-dishub', name: 'Agus Setiawan (Dishub Bogor)', email: 'agus@dishub.bogor.go.id', role: 'PETUGAS', kelurahan: 'Pabaton', kecamatan: 'Bogor Tengah' },
-        { id: 'officer-dlh', name: 'Rina Wahyuni (Dinas LH)', email: 'rina@dlh.bogor.go.id', role: 'PETUGAS', kelurahan: 'Baranangsiang', kecamatan: 'Bogor Timur' },
+        { id: 'officer-pupr', name: 'Budi Santoso (Petugas PUPR)', email: 'petugas@pupr.bogor.go.id', role: 'PETUGAS', kelurahan: 'Babakan', kecamatan: 'Bogor Tengah' },
+        { id: 'officer-dishub', name: 'Agus Setiawan (Teknisi PJU Dishub)', email: 'petugas.dishub@bogor.go.id', role: 'PETUGAS', kelurahan: 'Pabaton', kecamatan: 'Bogor Tengah' },
+        { id: 'officer-dlh', name: 'Rina Wahyuni (Unit Reaksi Cepat DLH)', email: 'petugas.dlh@bogor.go.id', role: 'PETUGAS', kelurahan: 'Baranangsiang', kecamatan: 'Bogor Timur' },
       ];
     }
 

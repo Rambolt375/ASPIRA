@@ -23,10 +23,12 @@ async function main() {
   // 2. Passwords
   const salt = await bcrypt.genSalt(10);
   const adminPassword = await bcrypt.hash('Admin123!', salt);
+  const dinasPassword = await bcrypt.hash('Dinas123!', salt);
   const officerPassword = await bcrypt.hash('Petugas123!', salt);
   const citizenPassword = await bcrypt.hash('Warga123!', salt);
 
   // 3. Create Users
+  // 3a. Admin & Dinas Pimpinan
   const admin = await prisma.user.create({
     data: {
       email: 'admin@aspira.bogor.go.id',
@@ -41,15 +43,116 @@ async function main() {
     },
   });
 
+  const dinasPemkot = await prisma.user.create({
+    data: {
+      email: 'dinas@kotabogor.go.id',
+      passwordHash: dinasPassword,
+      name: 'Pimpinan Dinas Pemkot Bogor',
+      role: 'LOCAL_GOVERNMENT',
+      kecamatan: 'Bogor Tengah',
+      kelurahan: 'Pabaton',
+      phone: '0251-8321075',
+      contributionPoints: 1000,
+      reputationLevel: 'DIAMOND',
+      isVerifiedReporter: true,
+    },
+  });
+
+  const dinasPupr = await prisma.user.create({
+    data: {
+      email: 'dinas.pupr@kotabogor.go.id',
+      passwordHash: dinasPassword,
+      name: 'Ir. Hendra Kusuma (Kadis PUPR)',
+      role: 'LOCAL_GOVERNMENT',
+      kecamatan: 'Bogor Tengah',
+      kelurahan: 'Babakan',
+      phone: '08111223344',
+      contributionPoints: 950,
+      reputationLevel: 'DIAMOND',
+      isVerifiedReporter: true,
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      email: 'dinas.dishub@kotabogor.go.id',
+      passwordHash: dinasPassword,
+      name: 'Drs. Eko Prabowo (Kadis Perhubungan)',
+      role: 'LOCAL_GOVERNMENT',
+      kecamatan: 'Bogor Tengah',
+      kelurahan: 'Pabaton',
+      contributionPoints: 900,
+      reputationLevel: 'DIAMOND',
+      isVerifiedReporter: true,
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      email: 'dinas.dlh@kotabogor.go.id',
+      passwordHash: dinasPassword,
+      name: 'Dra. Hj. Nina Nurmala (Kadis Lingkungan Hidup)',
+      role: 'LOCAL_GOVERNMENT',
+      kecamatan: 'Bogor Timur',
+      kelurahan: 'Baranangsiang',
+      contributionPoints: 900,
+      reputationLevel: 'DIAMOND',
+      isVerifiedReporter: true,
+    },
+  });
+
+  // 3b. Petugas Lapangan Teknis
   const officer = await prisma.user.create({
     data: {
       email: 'petugas@pupr.bogor.go.id',
       passwordHash: officerPassword,
-      name: 'Budi Santoso (Dinas PUPR)',
+      name: 'Budi Santoso (Petugas PUPR)',
       role: 'PETUGAS',
       kecamatan: 'Bogor Tengah',
       kelurahan: 'Babakan',
       contributionPoints: 500,
+      reputationLevel: 'GOLD',
+      isVerifiedReporter: true,
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      email: 'petugas.dishub@bogor.go.id',
+      passwordHash: officerPassword,
+      name: 'Agus Setiawan (Teknisi PJU Dishub)',
+      role: 'PETUGAS',
+      kecamatan: 'Bogor Tengah',
+      kelurahan: 'Pabaton',
+      contributionPoints: 550,
+      reputationLevel: 'GOLD',
+      isVerifiedReporter: true,
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      email: 'petugas.dlh@bogor.go.id',
+      passwordHash: officerPassword,
+      name: 'Rina Wahyuni (Unit Reaksi Cepat DLH)',
+      role: 'PETUGAS',
+      kecamatan: 'Bogor Timur',
+      kelurahan: 'Baranangsiang',
+      contributionPoints: 500,
+      reputationLevel: 'GOLD',
+      isVerifiedReporter: true,
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      email: 'petugas.bpbd@bogor.go.id',
+      passwordHash: officerPassword,
+      name: 'Doni Saputra (Satgas Reaksi Bencana BPBD)',
+      role: 'PETUGAS',
+      kecamatan: 'Bogor Selatan',
+      kelurahan: 'Empang',
+      contributionPoints: 520,
       reputationLevel: 'GOLD',
       isVerifiedReporter: true,
     },
