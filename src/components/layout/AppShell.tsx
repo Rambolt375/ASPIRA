@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { logoutUser } from '@/services/auth';
 import { getRoleWorkspace } from '@/lib/roles';
+import ThemeToggle from '@/components/theme/ThemeToggle';
 
 interface NavItem {
   href: string;
@@ -148,11 +149,11 @@ function NavLink({ item, onClick }: { item: NavItem; onClick?: () => void }) {
       className={[
         'flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all',
         isActive
-          ? 'bg-emerald-50 text-emerald-700 font-bold border border-emerald-200/60 shadow-xs'
-          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
+          ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200/60 dark:border-emerald-800/60 shadow-xs'
+          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white',
       ].join(' ')}
     >
-      <span className={isActive ? 'text-emerald-600' : 'text-slate-400'}>
+      <span className={isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}>
         {item.icon}
       </span>
       <span>{item.label}</span>
@@ -171,54 +172,57 @@ export function AppSidebar({ hideLogo = false, onNavigate }: { hideLogo?: boolea
   }
 
   const permittedNavItems = getNavItems(user?.role);
+  const isDinas = user?.role === 'PETUGAS' || user?.role === 'LOCAL_GOVERNMENT' || user?.role === 'ADMIN';
+  const visibleNavItems = permittedNavItems.filter((item) => (item.href === '/dinas' ? isDinas : true));
 
   return (
-    <aside className="flex flex-col h-full">
-      {/* Logo */}
+    <aside className="flex flex-col h-full bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors">
+      {/* Logo & Theme Toggle */}
       {!hideLogo && (
-        <div className="px-4 py-5 border-b border-slate-100">
+        <div className="px-4 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <Link href={getRoleWorkspace(user?.role)} onClick={onNavigate} className="flex items-center gap-2">
-            <span className="text-xl font-bold text-emerald-600 tracking-tight">ASPIRA</span>
-            <span className="text-xs text-slate-400 font-medium border border-slate-200 rounded-full px-2 py-0.5">
+            <span className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400 tracking-tight">ASPIRA</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium border border-slate-200 dark:border-slate-700 rounded-full px-2 py-0.5">
               Kota Bogor
             </span>
           </Link>
+          <ThemeToggle />
         </div>
       )}
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {permittedNavItems.map((item) => (
+        {visibleNavItems.map((item) => (
           <NavLink key={item.href} item={item} onClick={onNavigate} />
         ))}
       </nav>
 
       {/* User section */}
       {user ? (
-        <div className="px-3 py-4 border-t border-slate-100 space-y-2">
-          <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-              <span className="text-sm font-bold text-emerald-700">
+        <div className="px-3 py-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+          <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+            <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/60 flex items-center justify-center shrink-0">
+              <span className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
                 {user.name?.charAt(0)?.toUpperCase() ?? 'U'}
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-slate-800 truncate">{user.name}</p>
-              <p className="text-xs text-slate-400 truncate">{user.email}</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{user.name}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.role || user.email}</p>
             </div>
           </div>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-600 dark:hover:text-red-400 transition-colors"
           >
-            <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
             </svg>
-            Keluar
+            Keluar Sesi
           </button>
         </div>
       ) : (
-        <div className="px-3 py-4 border-t border-slate-100 space-y-2">
+        <div className="px-3 py-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
           <Link
             href="/login"
             onClick={onNavigate}
@@ -229,7 +233,7 @@ export function AppSidebar({ hideLogo = false, onNavigate }: { hideLogo?: boolea
           <Link
             href="/register"
             onClick={onNavigate}
-            className="flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-xl text-sm font-medium border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+            className="flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-xl text-sm font-medium border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
           >
             Daftar
           </Link>
@@ -249,15 +253,19 @@ export function MobileNav() {
   }
 
   const currentNav = getNavItems(user?.role);
+  const primaryWorkspace = currentNav[0];
+  const isSpecializedRole = user?.role && user.role !== 'USER' && user.role !== 'WARGA';
+
   const mobileItems = [
-    { href: currentNav[0].href, label: currentNav[0].label, icon: currentNav[0].icon },
-    { href: '/laporan', label: 'Laporan', icon: currentNav[1].icon },
-    { href: '/komunitas', label: 'Komunitas', icon: currentNav[2].icon },
-    { href: '/peta', label: 'Peta', icon: currentNav[4].icon },
+    { href: primaryWorkspace.href, label: primaryWorkspace.label, icon: primaryWorkspace.icon },
+    ...(isSpecializedRole ? [{ href: '/beranda', label: 'Beranda', icon: getNavItems('USER')[0].icon }] : []),
+    { href: '/laporan', label: 'Laporan', icon: currentNav.find((i) => i.href === '/laporan')?.icon },
+    { href: '/komunitas', label: 'Komunitas', icon: currentNav.find((i) => i.href === '/komunitas')?.icon },
+    { href: '/peta', label: 'Peta', icon: currentNav.find((i) => i.href === '/peta')?.icon },
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200/90 flex md:hidden shadow-[0_-2px_10px_rgba(0,0,0,0.06)] pb-[env(safe-area-inset-bottom,0px)] min-h-[3.75rem] items-center">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/90 dark:border-slate-800 flex md:hidden shadow-[0_-2px_10px_rgba(0,0,0,0.06)] pb-[env(safe-area-inset-bottom,0px)] min-h-[3.75rem] items-center">
       {mobileItems.map((item) => {
         const isActive = isRouteActive(pathname, item.href);
         return (
@@ -266,10 +274,10 @@ export function MobileNav() {
             href={item.href}
             className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 text-[11px] font-medium"
           >
-            <span className={isActive ? 'text-emerald-600 scale-105 transition-transform' : 'text-slate-400'}>
+            <span className={isActive ? 'text-emerald-600 dark:text-emerald-400 scale-105 transition-transform' : 'text-slate-400 dark:text-slate-500'}>
               {item.icon}
             </span>
-            <span className={isActive ? 'text-emerald-600 font-bold' : 'text-slate-600 font-medium'}>
+            <span className={isActive ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-600 dark:text-slate-400 font-medium'}>
               {item.label}
             </span>
           </Link>
@@ -288,7 +296,7 @@ export function MobileNav() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
               </svg>
             </span>
-            <span className={isLaporActive ? 'text-emerald-700 font-bold' : 'text-emerald-700 font-bold'}>
+            <span className="text-emerald-700 dark:text-emerald-400 font-bold">
               Lapor
             </span>
           </Link>
@@ -312,22 +320,25 @@ export function MobileHeader() {
   return (
     <>
       {/* Top bar — mobile only */}
-      <header className="md:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 h-14 flex items-center justify-between shadow-xs">
+      <header className="md:hidden sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 h-14 flex items-center justify-between shadow-xs">
         <Link href="/beranda" className="flex items-center gap-2">
-          <span className="text-xl font-black text-emerald-600 tracking-tight">ASPIRA</span>
-          <span className="text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5">
+          <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">ASPIRA</span>
+          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-2 py-0.5">
             Kota Bogor
           </span>
         </Link>
-        <button
-          onClick={() => setOpen(true)}
-          className="p-2 rounded-xl text-slate-700 hover:bg-slate-100 active:bg-slate-200 transition-colors"
-          aria-label="Buka menu"
-        >
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <button
+            onClick={() => setOpen(true)}
+            className="p-2 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 active:bg-slate-200 transition-colors"
+            aria-label="Buka menu"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+          </button>
+        </div>
       </header>
 
       {/* Drawer overlay with iOS Safari GPU hardware acceleration */}
@@ -341,19 +352,19 @@ export function MobileHeader() {
             onClick={() => setOpen(false)}
           />
           <div
-            className="absolute left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-2xl flex flex-col z-20 animate-in slide-in-from-left duration-200 mobile-gpu-layer"
+            className="absolute left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-white dark:bg-slate-900 shadow-2xl flex flex-col z-20 animate-in slide-in-from-left duration-200 mobile-gpu-layer"
             style={{ transform: 'translate3d(0, 0, 0)', WebkitTransform: 'translate3d(0, 0, 0)' }}
           >
-            <div className="flex items-center justify-between px-5 h-16 border-b border-slate-100 bg-white shrink-0">
+            <div className="flex items-center justify-between px-5 h-16 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
               <Link href="/beranda" onClick={() => setOpen(false)} className="flex items-center gap-2">
-                <span className="text-xl font-black text-emerald-600 tracking-tight">ASPIRA</span>
-                <span className="text-xs text-slate-600 font-bold border border-slate-200 rounded-full px-2 py-0.5">
+                <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">ASPIRA</span>
+                <span className="text-xs text-slate-600 dark:text-slate-300 font-bold border border-slate-200 dark:border-slate-700 rounded-full px-2 py-0.5">
                   Kota Bogor
                 </span>
               </Link>
               <button
                 onClick={() => setOpen(false)}
-                className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 aria-label="Tutup menu"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

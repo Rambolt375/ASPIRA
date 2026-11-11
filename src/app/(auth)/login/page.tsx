@@ -42,19 +42,19 @@ export default function LoginPage() {
   return (
     <div className="w-full max-w-md">
       {/* Card */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/60 p-8 sm:p-10">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-200/60 dark:shadow-none p-8 sm:p-10 transition-colors">
 
         {/* Heading */}
         <div className="mb-8 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-emerald-50 mb-4">
-            <svg className="w-6 h-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-900/50 mb-4">
+            <svg className="w-6 h-6 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">Masuk ke ASPIRA</h1>
-          <p className="mt-1.5 text-sm text-slate-500">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Masuk ke ASPIRA</h1>
+          <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
             Belum punya akun?{' '}
-            <Link href="/register" className="text-emerald-600 hover:text-emerald-700 font-medium">
+            <Link href="/register" className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 font-medium">
               Daftar gratis
             </Link>
           </p>
@@ -76,12 +76,12 @@ export default function LoginPage() {
 
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+              <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
                 Kata Sandi
               </label>
               <Link
                 href="/forgot-password"
-                className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+                className="text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 font-medium"
               >
                 Lupa kata sandi?
               </Link>
@@ -96,12 +96,12 @@ export default function LoginPage() {
                 required
                 autoComplete="current-password"
                 disabled={loading}
-                className="w-full rounded-xl border border-slate-300 px-3 py-2 pr-10 text-sm text-slate-900 placeholder:text-slate-500 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent disabled:bg-slate-50 disabled:text-slate-400"
+                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 pr-10 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-500 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent disabled:bg-slate-50 disabled:text-slate-400"
               />
               <button
                 type="button"
                 onClick={() => setShowPass(!showPass)}
-                className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600"
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                 aria-label={showPass ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
               >
                 {showPass ? (
@@ -120,11 +120,11 @@ export default function LoginPage() {
 
           {/* Error message */}
           {error && (
-            <div className="flex items-start gap-2.5 rounded-xl bg-red-50 border border-red-200 px-4 py-3">
+            <div className="flex items-start gap-2.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 px-4 py-3">
               <svg className="w-4 h-4 text-red-500 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
               </svg>
-              <p className="text-sm text-red-700">{error}</p>
+              <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
             </div>
           )}
 
@@ -141,15 +141,15 @@ export default function LoginPage() {
 
         {/* Divider */}
         <div className="my-6 flex items-center gap-3">
-          <div className="flex-1 h-px bg-slate-200" />
+          <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
           <span className="text-xs text-slate-400 font-medium">atau</span>
-          <div className="flex-1 h-px bg-slate-200" />
+          <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
         </div>
 
         {/* Guest link */}
-        <p className="text-center text-sm text-slate-500">
+        <p className="text-center text-sm text-slate-500 dark:text-slate-400">
           Ingin melihat laporan terlebih dahulu?{' '}
-          <Link href="/beranda" className="text-emerald-600 hover:text-emerald-700 font-medium">
+          <Link href="/beranda" className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 font-medium">
             Jelajahi tanpa akun
           </Link>
         </p>
