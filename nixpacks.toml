@@ -2,7 +2,7 @@
 nixPkgs = ["nodejs_20", "openssl"]
 
 [phases.install]
-cmds = ["npm ci"]
+cmds = ["npm ci --engine-strict false"]
 
 [phases.build]
 cmds = [
