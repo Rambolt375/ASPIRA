@@ -64,4 +64,15 @@
 ### 7. Standar Teknis & Kesiapan Lomba
 - [x] Web App Manifest (`/manifest.json`) untuk kemampuan Progressive Web App (PWA).
 - [x] `npm run lint` lolos dengan **0 error**.
-- [x] `npm run build` sukses memproduksi 25 rute statis dan dinamis.
+- [x] `npm run build` sukses memproduksi 32 rute statis dan dinamis.
+
+### 8. Portal & Dashboard Pemerintah Terkait (`/dinas`)
+- [x] **Portal Operasional Dinas & Wilayah** (`/dinas`):
+  - Ringkasan metrik KPI dinas: Laporan kritis, laporan terlewat batas SLA, antrean verifikasi, dan pekerjaan fisik aktif.
+  - Filter interaktif berdasarkan Satuan Kerja/OPD (Dinas PUPR, Dishub, DLH, BPBD, Disperumkim), status, dan prioritas keparahan.
+  - Modul Disposisi & Penugasan: Menugaskan instansi dinas dan PIC petugas lapangan.
+  - Modul Eskalasi 8-Status Resmi: Form pengubahan status resmi berdasar berita acara fisik dinas dengan unggah bukti foto perbaikan.
+  - Siaran Pengumuman Resmi Pemkot: Form penerbitan pengumuman darurat & pemeliharaan kota langsung ke warga.
+  - Mode Persona Evaluator: Switcher cepat untuk pengujian juri antara Warga, Petugas Lapangan PUPR, dan Administrator Pemkot.
+- [x] Rute API backend lengkap: `/api/dinas/stats`, `/api/dinas/reports`, `/api/dinas/officers`, `/api/dinas/announcements`.
+- [x] Navigasi `Portal Dinas` terintegrasi di `AppShell`.
