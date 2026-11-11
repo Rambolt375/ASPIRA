@@ -69,7 +69,7 @@ export default function DinasDashboardPage() {
   // Filters
   const [selectedAgency, setSelectedAgency] = useState('SEMUA');
   const [selectedStatus, setSelectedStatus] = useState<string>('SEMUA');
-  const [selectedSeverity, setSelectedSeverity] = useState<string>('SEMUA');
+  const [selectedSeverity] = useState<string>('SEMUA');
   const [searchQuery, setSearchQuery] = useState('');
   const [urgentOnly, setUrgentOnly] = useState(false);
 
@@ -78,8 +78,11 @@ export default function DinasDashboardPage() {
   const [activeReportForAssign, setActiveReportForAssign] = useState<ReportItem | null>(null);
   const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
 
+  const isAuthorized = user?.role === 'LOCAL_GOVERNMENT';
+
   // Fetch Dashboard Stats
   const fetchStats = useCallback(async () => {
+    if (!isAuthorized) return;
     try {
       const q = selectedAgency !== 'SEMUA' ? `?agency=${encodeURIComponent(selectedAgency)}` : '';
       const res = await fetch(`/api/dinas/stats${q}`);
@@ -88,11 +91,11 @@ export default function DinasDashboardPage() {
     } catch (e) {
       console.error('Error fetching stats', e);
     }
-  }, [selectedAgency]);
+  }, [selectedAgency, isAuthorized]);
 
   // Fetch Reports
   const fetchReports = useCallback(async () => {
-    setLoading(true);
+    if (!isAuthorized) return;
     try {
       const params = new URLSearchParams();
       if (selectedAgency !== 'SEMUA') params.set('agency', selectedAgency);
@@ -106,18 +109,63 @@ export default function DinasDashboardPage() {
       if (data.reports) setReports(data.reports);
     } catch (e) {
       console.error('Error fetching dinas reports', e);
-    } finally {
-      setLoading(false);
     }
-  }, [selectedAgency, selectedStatus, selectedSeverity, searchQuery, urgentOnly]);
+  }, [selectedAgency, selectedStatus, selectedSeverity, searchQuery, urgentOnly, isAuthorized]);
 
   useEffect(() => {
-    fetchStats();
-    fetchReports();
-  }, [fetchStats, fetchReports]);
+    if (!isAuthorized) return;
+    let active = true;
+    void Promise.resolve().then(async () => {
+      if (!active) return;
+      setLoading(true);
+      try {
+        await Promise.all([fetchStats(), fetchReports()]);
+      } finally {
+        if (active) setLoading(false);
+      }
+    });
 
-  const isGovernmentOfficer =
-    user?.role === 'PETUGAS' || user?.role === 'LOCAL_GOVERNMENT' || user?.role === 'ADMIN';
+    return () => {
+      active = false;
+    };
+  }, [fetchStats, fetchReports, isAuthorized]);
+
+  if (!isAuthorized) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <RoleQuickSwitch />
+
+        <div className="p-8 sm:p-12 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center shadow-sm">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center text-3xl shadow-sm">
+            🛡️
+          </div>
+          <span className="px-3 py-1 text-xs font-bold uppercase rounded-full bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+            Akses Terbatas
+          </span>
+          <h1 className="mt-3 text-2xl font-extrabold text-slate-900 dark:text-white">
+            Portal Khusus Dinas & OPD Pemkot
+          </h1>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 max-w-lg mx-auto">
+            Halaman ini khusus untuk peran <strong className="text-slate-800 dark:text-slate-200">LOCAL_GOVERNMENT</strong> (Dinas & OPD Pelaksana Kota Bogor). Gunakan panel simulasi di atas untuk menguji.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/beranda"
+              className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-sm transition-colors"
+            >
+              Kembali ke Beranda
+            </Link>
+            <Link
+              href="/laporan"
+              className="px-5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-semibold transition-colors"
+            >
+              Lihat Laporan Publik
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -162,23 +210,6 @@ export default function DinasDashboardPage() {
           </button>
         </div>
       </div>
-
-      {/* Access Notice if user is citizen */}
-      {!isGovernmentOfficer && (
-        <div className="mb-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🛡️</span>
-            <div>
-              <p className="text-sm font-bold text-amber-900 dark:text-amber-200">
-                Mode Peninjauan Akses Terbatas
-              </p>
-              <p className="text-xs text-amber-700 dark:text-amber-300">
-                Anda sedang melihat portal dalam peran Warga. Untuk menguji aksi penugasan dan perubahan status resmi, gunakan tombol Persona di atas.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* KPI Stats Cards */}
       <DinasStatsCards

@@ -1,16 +1,36 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
+import { getRoleWorkspace } from '@/lib/roles';
 import type { AppUser, UserRole } from '@/types';
+import type { Role } from '@prisma/client';
 
-const DEMO_PERSONAS: { role: UserRole; name: string; title: string; email: string; id: string }[] = [
+const DEMO_PERSONAS: { role: Role; name: string; title: string; email: string; id: string; targetWorkspace: string }[] = [
+  {
+    role: 'USER',
+    name: 'Rahmat Hidayat',
+    title: 'Warga Pelapor (Kec. Bogor Tengah)',
+    email: 'warga@aspira.id',
+    id: 'demo-citizen-rahmat',
+    targetWorkspace: '/beranda',
+  },
   {
     role: 'PETUGAS',
     name: 'Budi Santoso',
-    title: 'Dinas PUPR Kota Bogor',
+    title: 'Inspektur Lapangan (PUPR)',
     email: 'petugas@pupr.bogor.go.id',
     id: 'demo-officer-pupr',
+    targetWorkspace: '/petugas',
+  },
+  {
+    role: 'LOCAL_GOVERNMENT',
+    name: 'Hendra Wijaya',
+    title: 'Dinas PUPR Kota Bogor',
+    email: 'dinas@kotabogor.go.id',
+    id: 'demo-dinas-pupr',
+    targetWorkspace: '/dinas',
   },
   {
     role: 'ADMIN',
@@ -18,31 +38,39 @@ const DEMO_PERSONAS: { role: UserRole; name: string; title: string; email: strin
     title: 'Diskominfo Kota Bogor',
     email: 'admin@aspira.bogor.go.id',
     id: 'demo-admin-pemkot',
-  },
-  {
-    role: 'USER',
-    name: 'Rahmat Hidayat',
-    title: 'Warga Pelapor (Kec. Bogor Tengah)',
-    email: 'warga@aspira.id',
-    id: 'demo-citizen-rahmat',
+    targetWorkspace: '/admin',
   },
 ];
 
 export default function RoleQuickSwitch() {
+  const router = useRouter();
   const { user, setUser } = useAuthStore();
 
-  function handleSwitch(persona: typeof DEMO_PERSONAS[0]) {
+  async function handleSwitch(persona: typeof DEMO_PERSONAS[0]) {
     const updatedUser: AppUser = {
       id: user?.id || persona.id,
       email: persona.email,
       name: persona.name,
-      role: persona.role,
+      role: persona.role as UserRole,
       kecamatan: 'Bogor Tengah',
       kelurahan: 'Pabaton',
       avatarUrl: user?.avatarUrl || null,
       createdAt: user?.createdAt || new Date().toISOString(),
     };
     setUser(updatedUser);
+
+    try {
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: persona.role, id: persona.id }),
+      });
+    } catch {
+      // Continue even if network glitch
+    }
+
+    const workspace = getRoleWorkspace(persona.role);
+    router.push(workspace);
   }
 
   return (
@@ -52,7 +80,7 @@ export default function RoleQuickSwitch() {
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
           <div>
             <p className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-              Mode Evaluasi Juri & Petugas
+              Mode Evaluasi Juri & Pengujian Peran
             </p>
             <p className="text-sm font-bold text-white">
               Login Aktif:{' '}
@@ -67,7 +95,7 @@ export default function RoleQuickSwitch() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-slate-400 mr-1 hidden md:inline">Ganti Persona:</span>
+          <span className="text-xs text-slate-400 mr-1 hidden md:inline">Ganti Peran:</span>
           {DEMO_PERSONAS.map((p) => {
             const isActive = user?.role === p.role;
             return (

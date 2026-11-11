@@ -48,12 +48,16 @@ export default function AsistenPage() {
         }),
       });
 
-      const data = await res.json();
+      const data = (await res.json().catch(() => ({}))) as { reply?: string; error?: string };
+      if (!res.ok || !data.reply) {
+        throw new Error(data.error || 'AI request failed');
+      }
+
       msgCounter.current += 1;
       const modelMessage: ChatMessage = {
         id: `model-${msgCounter.current}`,
         role: 'model',
-        content: data.reply || 'Maaf, terjadi kendala respon server.',
+        content: data.reply,
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, modelMessage]);

@@ -47,8 +47,11 @@ export async function loginUser(email: string, password: string): Promise<AppUse
  * Logout user.
  */
 export async function logoutUser(): Promise<void> {
-  // Clears user from client session
-  return Promise.resolve();
+  try {
+    await fetch('/api/auth/logout', { method: 'POST' });
+  } catch {
+    // Continue even if network error
+  }
 }
 
 /**
