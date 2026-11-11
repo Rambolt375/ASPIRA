@@ -12,6 +12,7 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@prisma/client": "^6.19.3",
+    "@tailwindcss/postcss": "^4.3.5",
     "bcryptjs": "^3.0.3",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.66.0",
