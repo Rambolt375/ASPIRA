@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useAuthStore } from '@/stores/authStore';
@@ -241,51 +241,13 @@ export default function BuatLaporanPage() {
     setSearchingLocation(false);
   }, []);
 
-  // Handle direct camera capture
-  async function startCamera() {
-    try {
-      triggerHaptic('light');
-      setIsCameraActive(true);
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-      });
-      mediaStreamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-      }
-    } catch {
-      setError('Tidak dapat mengakses kamera peramban. Silakan unggah foto dari galeri.');
-      setIsCameraActive(false);
-    }
-  }
-
-  function capturePhoto() {
-    if (!videoRef.current) return;
-    triggerHaptic('medium');
-    setIsCompressing(true);
-
-    try {
-      // Compress via offscreen HTML5 canvas to max 1280x720, quality 0.75
-      const { dataUrl, sizeKb } = compressCanvas(videoRef.current, 1280, 720, 0.75);
-      setImageDataUrl(dataUrl);
-      setCompressedSizeKb(sizeKb);
-      setIsDirectCapture(true);
-      stopCamera();
-      triggerHaptic('success');
-    } catch {
-      setError('Gagal memproses foto dari kamera.');
-    } finally {
-      setIsCompressing(false);
-    }
-  }
-
-  function stopCamera() {
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((t) => t.stop());
-      mediaStreamRef.current = null;
-    }
-    setIsCameraActive(false);
+  // Handle camera capture from NativeCameraModal
+  function handleCameraCapture(photo: CapturedPhoto) {
+    setImageDataUrl(photo.dataUrl);
+    setCompressedSizeKb(photo.sizeKb);
+    setIsDirectCapture(photo.isDirectCapture);
+    setIsCameraModalOpen(false);
+    triggerHaptic('success');
   }
 
   // Handle gallery file input with automatic Canvas Compression

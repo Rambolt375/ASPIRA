@@ -36,7 +36,14 @@
 - [x] Added the mobile top-header offset to the main content layout so content is not hidden behind the fixed/sticky header.
 - [x] Improved small-screen report cards, dashboard grids, and community links with wrapping/truncation behavior.
 
+## ✅ Bug Fixes: /lapor & /api/email (2026-11-11)
+
+- [x] Fixed runtime/compilation error on `/lapor` (`src/app/(main)/laporan/buat/page.tsx`): removed obsolete inline camera methods (`startCamera`, `capturePhoto`, `stopCamera`) referencing deleted refs/variables and added the missing `handleCameraCapture` handler for `NativeCameraModal`.
+- [x] Fixed module-level crash in `src/lib/email/index.ts`: replaced top-level `new Resend(RESEND_API_KEY)` with lazy client initialization `getResendClient()` so the app does not throw when `RESEND_API_KEY` is undefined/unconfigured.
+- [x] Synchronized latest remote changes and verified `npm install` for `resend`.
+- [x] Verified full production compilation (`npm run build`) and clean linting (`npm run lint`).
+
 ## Validation
 
 - [x] `npm run lint` — passed with existing warnings only.
-- [x] `npm run build` — passed successfully.
+- [x] `npm run build` — passed successfully across all 44 routes.
