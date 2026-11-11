@@ -1,0 +1,299 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  USER
+  PETUGAS
+  LOCAL_GOVERNMENT
+  ADMIN
+}
+
+enum ReputationLevel {
+  BRONZE
+  SILVER
+  GOLD
+  DIAMOND
+}
+
+enum ReportStatus {
+  DITERIMA
+  VERIFIKASI
+  DICEK
+  DITUGASKAN
+  DALAM_PENANGANAN
+  DIATASI
+  PENINJAUAN
+  PERAWATAN
+  DITOLAK
+  DIBUKA_KEMBALI
+}
+
+enum ReportCategory {
+  JALAN
+  JEMBATAN
+  DRAINASE
+  LAMPU_JALAN
+  TAMAN
+  SAMPAH
+  BANJIR
+  LAINNYA
+}
+
+enum SeverityLevel {
+  RENDAH
+  SEDANG
+  TINGGI
+  KRITIS
+}
+
+enum CaptureSource {
+  CAMERA_DIRECT
+  GALLERY
+}
+
+enum PostType {
+  DISCUSSION
+  NEWS
+  UMKM
+  REPORT_DISCUSSION
+}
+
+enum ActivityType {
+  REPORT_VERIFIED
+  CONFIRMATION_VALID
+  USEFUL_DISCUSSION
+  RESOLUTION_CONFIRMED
+}
+
+enum BadgeType {
+  REPORTER
+  HELPER
+  TOP_10
+}
+
+model User {
+  id                 String           @id @default(uuid())
+  email              String           @unique
+  passwordHash       String
+  name               String
+  role               Role             @default(USER)
+  avatarUrl          String?
+  kelurahan          String?
+  kecamatan          String?
+  phone              String?
+  isVerifiedReporter Boolean          @default(false)
+  contributionPoints Int              @default(0)
+  reputationLevel    ReputationLevel  @default(BRONZE)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  reports            Report[]
+  statusHistories    StatusHistory[]
+  reviewedEvidence   EvidenceVerification[] @relation("EvidenceReviewer")
+  confirmations      ReportConfirmation[]
+  posts              CommunityPost[]
+  comments           CommunityComment[]
+  votes              PostVote[]
+  pointTransactions  PointTransaction[]
+  badges             UserBadge[]
+
+  @@map("users")
+}
+
+model Report {
+  id              String           @id @default(uuid())
+  ticketNumber    String           @unique
+  title           String
+  description     String
+  category        ReportCategory
+  severity        SeverityLevel    @default(SEDANG)
+  status          ReportStatus     @default(DITERIMA)
+  lat             Float
+  lng             Float
+  address         String
+  kelurahan       String?
+  kecamatan       String?
+  slaDeadline     DateTime?
+  assignedAgency  String?
+  isAnonymous     Boolean          @default(false)
+  authorId        String
+  author          User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  media           ReportMedia[]
+  statusHistory   StatusHistory[]
+  verification    EvidenceVerification?
+  confirmations   ReportConfirmation[]
+
+  @@index([status])
+  @@index([category])
+  @@index([kecamatan])
+  @@index([createdAt])
+  @@map("reports")
+}
+
+model ReportMedia {
+  id             String        @id @default(uuid())
+  reportId       String
+  report         Report        @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  fileUrl        String
+  mediaType      String        @default("image/jpeg")
+  isDirectCapture Boolean       @default(false)
+  captureSource  CaptureSource @default(GALLERY)
+  metadataJson   String?
+  blurredUrl     String?
+  isAfterPhoto   Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+
+  @@map("report_media")
+}
+
+model StatusHistory {
+  id               String       @id @default(uuid())
+  reportId         String
+  report           Report       @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  previousStatus   ReportStatus?
+  newStatus        ReportStatus
+  actorId          String
+  actor            User         @relation(fields: [actorId], references: [id])
+  note             String?
+  evidencePhotoUrl String?
+  createdAt        DateTime     @default(now())
+
+  @@index([reportId, createdAt])
+  @@map("status_histories")
+}
+
+model EvidenceVerification {
+  id                  String          @id @default(uuid())
+  reportId            String          @unique
+  report              Report          @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  authenticityScore   Float           @default(1.0)
+  isLegitimate        Boolean         @default(true)
+  confidence          Float           @default(0.8)
+  aiFindingsJson      String?
+  suggestedCategory   ReportCategory?
+  suggestedSeverity   SeverityLevel?
+  requiresHumanReview Boolean         @default(false)
+  reviewerId          String?
+  reviewer            User?           @relation("EvidenceReviewer", fields: [reviewerId], references: [id])
+  reviewDecision      String?
+  reviewNotes         String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@map("evidence_verifications")
+}
+
+model ReportConfirmation {
+  id        String   @id @default(uuid())
+  reportId  String
+  report    Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  note      String?
+  photoUrl  String?
+  createdAt DateTime @default(now())
+
+  @@unique([reportId, userId])
+  @@map("report_confirmations")
+}
+
+model CommunityPost {
+  id             String             @id @default(uuid())
+  title          String
+  content        String
+  type           PostType           @default(DISCUSSION)
+  category       String?
+  isPinned       Boolean            @default(false)
+  authorId       String
+  author         User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  linkedReportId String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  comments       CommunityComment[]
+  votes          PostVote[]
+
+  @@index([type])
+  @@index([createdAt])
+  @@map("community_posts")
+}
+
+model CommunityComment {
+  id        String             @id @default(uuid())
+  postId    String
+  post      CommunityPost      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    CommunityComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   CommunityComment[] @relation("CommentReplies")
+  authorId  String
+  author    User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@index([postId, createdAt])
+  @@map("community_comments")
+}
+
+model PostVote {
+  id        String        @id @default(uuid())
+  postId    String
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  value     Int
+  createdAt DateTime      @default(now())
+
+  @@unique([postId, userId])
+  @@map("post_votes")
+}
+
+model PointTransaction {
+  id             String       @id @default(uuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  points         Int
+  activityType   ActivityType
+  referenceId    String?
+  idempotencyKey String       @unique
+  createdAt      DateTime     @default(now())
+
+  @@index([userId])
+  @@map("point_transactions")
+}
+
+model UserBadge {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeType BadgeType
+  awardedAt DateTime  @default(now())
+
+  @@unique([userId, badgeType])
+  @@map("user_badges")
+}
+
+model CityAnnouncement {
+  id             String   @id @default(uuid())
+  title          String
+  content        String
+  sourceUrl      String?
+  sourceName     String?
+  isEmergency    Boolean  @default(false)
+  summarizedByAi Boolean  @default(true)
+  publishedAt    DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  @@index([publishedAt])
+  @@map("city_announcements")
+}
+

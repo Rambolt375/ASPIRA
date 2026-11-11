@@ -18,33 +18,33 @@ export default function ReportCard({ report }: Props) {
     >
       {/* Category + status */}
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+        <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">
           {report.category}
         </span>
-        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${statusStyle}`}>
+        <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${statusStyle}`}>
           {REPORT_STATUSES[report.status]?.label ?? report.status}
         </span>
       </div>
 
       {/* Title */}
-      <h2 className="text-base font-semibold text-slate-900 line-clamp-2">{report.title}</h2>
+      <h2 className="text-base font-bold text-slate-900 line-clamp-2">{report.title}</h2>
 
       {/* Description */}
-      <p className="text-sm text-slate-500 line-clamp-2">{report.description}</p>
+      <p className="text-sm font-normal text-slate-600 line-clamp-2 leading-relaxed">{report.description}</p>
 
       {/* Footer */}
-      <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
-        <span className="flex items-center gap-1">
-          <MapPin size={12} />
-          {report.address}
+      <div className="flex items-center justify-between text-xs font-semibold text-slate-600 pt-1 border-t border-slate-100">
+        <span className="flex items-center gap-1.5 truncate mr-2">
+          <MapPin size={13} className="text-emerald-600 shrink-0" />
+          <span className="truncate">{report.address}</span>
         </span>
-        <span>{new Date(report.createdAt).toLocaleDateString('id-ID')}</span>
+        <span className="shrink-0 text-slate-500 font-medium">{new Date(report.createdAt).toLocaleDateString('id-ID')}</span>
       </div>
 
       {/* Community confirmations */}
-      {report.communityConfirmations.length > 0 && (
-        <p className="text-xs text-emerald-600 font-medium">
-          ✓ {report.communityConfirmations.length} warga mengonfirmasi
+      {(report.communityConfirmations?.length ?? 0) > 0 && (
+        <p className="text-xs text-emerald-700 font-bold flex items-center gap-1">
+          <span>✓</span> {report.communityConfirmations?.length ?? 0} warga mengonfirmasi
         </p>
       )}
     </Link>

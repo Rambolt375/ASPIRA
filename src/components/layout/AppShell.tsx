@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { logoutUser } from '@/services/auth';
 
@@ -19,6 +19,15 @@ const navItems: NavItem[] = [
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+      </svg>
+    ),
+  },
+  {
+    href: '/laporan',
+    label: 'Daftar Laporan',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
       </svg>
     ),
   },
@@ -78,33 +87,43 @@ const navItems: NavItem[] = [
   },
 ];
 
+function isRouteActive(currentPath: string, targetHref: string): boolean {
+  if (targetHref === '/beranda') {
+    return currentPath === '/beranda';
+  }
+  if (targetHref === '/lapor') {
+    return currentPath === '/lapor' || currentPath === '/laporan/buat';
+  }
+  if (targetHref === '/laporan') {
+    return currentPath === '/laporan' || (currentPath.startsWith('/laporan/') && currentPath !== '/laporan/buat');
+  }
+  return currentPath === targetHref || currentPath.startsWith(targetHref + '/');
+}
+
 function NavLink({ item, onClick }: { item: NavItem; onClick?: () => void }) {
   const pathname = usePathname();
-  const isActive = pathname === item.href || (item.href !== '/beranda' && pathname.startsWith(item.href));
-  const isReport = item.href === '/lapor';
+  const isActive = isRouteActive(pathname, item.href);
 
   return (
     <Link
       href={item.href}
       onClick={onClick}
       className={[
-        'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
-        isReport
-          ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm'
-          : isActive
-            ? 'bg-emerald-50 text-emerald-700'
-            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
+        'flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all',
+        isActive
+          ? 'bg-emerald-50 text-emerald-700 font-bold border border-emerald-200/60 shadow-xs'
+          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
       ].join(' ')}
     >
-      <span className={isReport ? 'text-white' : isActive ? 'text-emerald-600' : 'text-slate-400'}>
+      <span className={isActive ? 'text-emerald-600' : 'text-slate-400'}>
         {item.icon}
       </span>
-      {item.label}
+      <span>{item.label}</span>
     </Link>
   );
 }
 
-export function AppSidebar() {
+export function AppSidebar({ hideLogo = false, onNavigate }: { hideLogo?: boolean; onNavigate?: () => void }) {
   const router = useRouter();
   const { user, clear } = useAuthStore();
 
@@ -117,19 +136,21 @@ export function AppSidebar() {
   return (
     <aside className="flex flex-col h-full">
       {/* Logo */}
-      <div className="px-4 py-5 border-b border-slate-100">
-        <Link href="/beranda" className="flex items-center gap-2">
-          <span className="text-xl font-bold text-emerald-600 tracking-tight">ASPIRA</span>
-          <span className="text-xs text-slate-400 font-medium border border-slate-200 rounded-full px-2 py-0.5">
-            Kota Bogor
-          </span>
-        </Link>
-      </div>
+      {!hideLogo && (
+        <div className="px-4 py-5 border-b border-slate-100">
+          <Link href="/beranda" onClick={onNavigate} className="flex items-center gap-2">
+            <span className="text-xl font-bold text-emerald-600 tracking-tight">ASPIRA</span>
+            <span className="text-xs text-slate-400 font-medium border border-slate-200 rounded-full px-2 py-0.5">
+              Kota Bogor
+            </span>
+          </Link>
+        </div>
+      )}
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => (
-          <NavLink key={item.href} item={item} />
+          <NavLink key={item.href} item={item} onClick={onNavigate} />
         ))}
       </nav>
 
@@ -161,12 +182,14 @@ export function AppSidebar() {
         <div className="px-3 py-4 border-t border-slate-100 space-y-2">
           <Link
             href="/login"
+            onClick={onNavigate}
             className="flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-xl text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
           >
             Masuk
           </Link>
           <Link
             href="/register"
+            onClick={onNavigate}
             className="flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-xl text-sm font-medium border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
           >
             Daftar
@@ -179,37 +202,57 @@ export function AppSidebar() {
 
 export function MobileNav() {
   const pathname = usePathname();
-  const mobileItems = navItems.filter((i) => i.href !== '/lapor');
+
+  // Hide bottom nav on report creation wizard to give full ergonomic space to form actions
+  if (pathname === '/lapor' || pathname === '/laporan/buat') {
+    return null;
+  }
+
+  const mobileItems = [
+    { href: '/beranda', label: 'Beranda', icon: navItems[0].icon },
+    { href: '/laporan', label: 'Laporan', icon: navItems[1].icon },
+    { href: '/komunitas', label: 'Komunitas', icon: navItems[2].icon },
+    { href: '/peta', label: 'Peta', icon: navItems[4].icon },
+  ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 flex md:hidden">
-      {mobileItems.slice(0, 4).map((item) => {
-        const isActive = pathname === item.href || (item.href !== '/beranda' && pathname.startsWith(item.href));
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200/90 flex md:hidden shadow-[0_-2px_10px_rgba(0,0,0,0.06)] pb-[env(safe-area-inset-bottom,0px)] min-h-[3.75rem] items-center">
+      {mobileItems.map((item) => {
+        const isActive = isRouteActive(pathname, item.href);
         return (
           <Link
             key={item.href}
             href={item.href}
-            className="flex-1 flex flex-col items-center justify-center gap-1 py-2 text-xs"
+            className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 text-[11px] font-medium"
           >
-            <span className={isActive ? 'text-emerald-600' : 'text-slate-400'}>{item.icon}</span>
-            <span className={isActive ? 'text-emerald-600 font-semibold' : 'text-slate-500'}>
+            <span className={isActive ? 'text-emerald-600 scale-105 transition-transform' : 'text-slate-400'}>
+              {item.icon}
+            </span>
+            <span className={isActive ? 'text-emerald-600 font-bold' : 'text-slate-600 font-medium'}>
               {item.label}
             </span>
           </Link>
         );
       })}
       {/* FAB for report creation */}
-      <Link
-        href="/lapor"
-        className="flex-1 flex flex-col items-center justify-center gap-1 py-2 text-xs"
-      >
-        <span className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white">
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-        </span>
-        <span className="text-emerald-600 font-semibold">Lapor</span>
-      </Link>
+      {(() => {
+        const isLaporActive = isRouteActive(pathname, '/lapor');
+        return (
+          <Link
+            href="/lapor"
+            className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1 text-[11px]"
+          >
+            <span className={`w-8 h-8 rounded-full flex items-center justify-center text-white shadow-sm transition-transform active:scale-95 ${isLaporActive ? 'bg-emerald-700 ring-2 ring-emerald-300' : 'bg-emerald-600'}`}>
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+            </span>
+            <span className={isLaporActive ? 'text-emerald-700 font-bold' : 'text-emerald-700 font-bold'}>
+              Lapor
+            </span>
+          </Link>
+        );
+      })()}
     </nav>
   );
 }
@@ -217,45 +260,69 @@ export function MobileNav() {
 export function MobileHeader() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const [prevPathname, setPrevPathname] = useState(pathname);
 
-  // Close drawer on route change
-  useEffect(() => { setOpen(false); }, [pathname]);
+  // Close drawer on route change (render-time state adjustment)
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
+    setOpen(false);
+  }
 
   return (
     <>
       {/* Top bar — mobile only */}
-      <header className="md:hidden sticky top-0 z-40 bg-white border-b border-slate-200 px-4 h-14 flex items-center justify-between">
+      <header className="md:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 h-14 flex items-center justify-between shadow-xs">
         <Link href="/beranda" className="flex items-center gap-2">
-          <span className="text-xl font-bold text-emerald-600 tracking-tight">ASPIRA</span>
+          <span className="text-xl font-black text-emerald-600 tracking-tight">ASPIRA</span>
+          <span className="text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5">
+            Kota Bogor
+          </span>
         </Link>
         <button
           onClick={() => setOpen(true)}
-          className="p-2 rounded-lg text-slate-600 hover:bg-slate-100"
+          className="p-2 rounded-xl text-slate-700 hover:bg-slate-100 active:bg-slate-200 transition-colors"
           aria-label="Buka menu"
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
           </svg>
         </button>
       </header>
 
-      {/* Drawer overlay */}
+      {/* Drawer overlay with iOS Safari GPU hardware acceleration */}
       {open && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-0 bottom-0 w-72 bg-white shadow-2xl flex flex-col">
-            <div className="flex items-center justify-between px-4 h-14 border-b border-slate-100">
-              <span className="text-xl font-bold text-emerald-600">ASPIRA</span>
+        <div
+          className="fixed inset-0 z-[99999] md:hidden mobile-gpu-layer"
+          style={{ transform: 'translate3d(0, 0, 0)', WebkitTransform: 'translate3d(0, 0, 0)' }}
+        >
+          <div
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+            onClick={() => setOpen(false)}
+          />
+          <div
+            className="absolute left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-2xl flex flex-col z-20 animate-in slide-in-from-left duration-200 mobile-gpu-layer"
+            style={{ transform: 'translate3d(0, 0, 0)', WebkitTransform: 'translate3d(0, 0, 0)' }}
+          >
+            <div className="flex items-center justify-between px-5 h-16 border-b border-slate-100 bg-white shrink-0">
+              <Link href="/beranda" onClick={() => setOpen(false)} className="flex items-center gap-2">
+                <span className="text-xl font-black text-emerald-600 tracking-tight">ASPIRA</span>
+                <span className="text-xs text-slate-600 font-bold border border-slate-200 rounded-full px-2 py-0.5">
+                  Kota Bogor
+                </span>
+              </Link>
               <button
                 onClick={() => setOpen(false)}
-                className="p-2 rounded-lg text-slate-500 hover:bg-slate-100"
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+                aria-label="Tutup menu"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-            <AppSidebar />
+            <div className="flex-1 overflow-y-auto">
+              <AppSidebar hideLogo onNavigate={() => setOpen(false)} />
+            </div>
           </div>
         </div>
       )}

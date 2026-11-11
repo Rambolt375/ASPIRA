@@ -1,108 +1,179 @@
-import {
-  collection,
-  doc,
-  addDoc,
-  getDoc,
-  getDocs,
-  updateDoc,
-  query,
-  where,
-  orderBy,
-  limit,
-  startAfter,
-  serverTimestamp,
-  arrayUnion,
-  type QueryDocumentSnapshot,
-} from 'firebase/firestore';
-import { getFirebaseDb } from '@/lib/firebase';
-import type { Report, ReportStatus, StatusHistoryEntry } from '@/types';
+import type { Report, ReportStatus } from '@/types';
 
-const REPORTS = 'reports';
-const PAGE_SIZE = 20;
-
-// ─── Create ───────────────────────────────────────────────────────────────────
+/**
+ * Client service for reports interacting with ASPIRA API routes.
+ */
 
 export async function createReport(
-  data: Omit<Report, 'id' | 'status' | 'statusHistory' | 'createdAt' | 'updatedAt' | 'communityConfirmations'>,
+  data: Partial<Report> & {
+    title: string;
+    description: string;
+    category: Report['category'];
+    authorId: string;
+    address: string;
+    lat: number;
+    lng: number;
+  },
 ): Promise<string> {
-  const db = getFirebaseDb();
-  const firstEntry: StatusHistoryEntry = {
-    status:    'DITERIMA',
-    timestamp: new Date().toISOString(),
-    actorId:   data.authorId,
-    actorName: data.authorName,
-    note:      'Laporan berhasil dibuat',
-  };
-
-  const ref = await addDoc(collection(db, REPORTS), {
-    ...data,
-    status:                 'DITERIMA',
-    statusHistory:          [firstEntry],
-    communityConfirmations: [],
-    createdAt:              serverTimestamp(),
-    updatedAt:              serverTimestamp(),
+  const res = await fetch('/api/reports', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ...data,
+      mediaFiles: (data.photoUrls || []).map((url) => ({
+        fileUrl: url,
+        mediaType: 'image/jpeg',
+        isDirectCapture: false,
+      })),
+    }),
   });
 
-  return ref.id;
-}
+  const json = await res.json();
+  if (!res.ok) {
+    throw new Error(json.error || 'Gagal mengirim laporan.');
+  }
 
-// ─── Read ─────────────────────────────────────────────────────────────────────
+  return json.report.id;
+}
 
 export async function getReport(id: string): Promise<Report | null> {
-  const snap = await getDoc(doc(getFirebaseDb(), REPORTS, id));
-  return snap.exists() ? ({ id: snap.id, ...snap.data() } as Report) : null;
+  const res = await fetch(`/api/reports/${id}`);
+  if (!res.ok) {
+    if (res.status === 404) return null;
+    throw new Error('Gagal memuat laporan.');
+  }
+
+  const json = await res.json();
+  const r = json.report;
+
+  return {
+    id: r.id,
+    ticketNumber: r.ticketNumber,
+    title: r.title,
+    description: r.description,
+    category: r.category,
+    severity: r.severity,
+    location: { lat: r.lat, lng: r.lng },
+    address: r.address,
+    kelurahan: r.kelurahan,
+    kecamatan: r.kecamatan,
+    photoUrls: (r.media || []).map((m: { fileUrl: string }) => m.fileUrl),
+    media: r.media,
+    status: r.status,
+    statusHistory: (r.statusHistory || []).map((sh: { newStatus: ReportStatus; createdAt: string; actorId: string; actor?: { name: string }; note?: string; evidencePhotoUrl?: string }) => ({
+      status: sh.newStatus,
+      timestamp: sh.createdAt,
+      actorId: sh.actorId,
+      actorName: sh.actor?.name,
+      note: sh.note,
+      photoUrl: sh.evidencePhotoUrl,
+    })),
+    authorId: r.authorId,
+    authorName: r.author?.name || 'Warga',
+    assignedAgency: r.assignedAgency,
+    slaDeadline: r.slaDeadline,
+    verification: r.verification,
+    communityConfirmations: (r.confirmations || []).map((c: { userId: string }) => c.userId),
+    createdAt: r.createdAt,
+    updatedAt: r.updatedAt,
+  };
 }
 
-export async function getReports(
-  cursor?: QueryDocumentSnapshot,
-): Promise<{ reports: Report[]; nextCursor: QueryDocumentSnapshot | null }> {
-  const db = getFirebaseDb();
-  let q = query(collection(db, REPORTS), orderBy('createdAt', 'desc'), limit(PAGE_SIZE));
-  if (cursor) q = query(q, startAfter(cursor));
+export async function getReports(params?: {
+  status?: ReportStatus;
+  category?: Report['category'];
+  kecamatan?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<{ reports: Report[]; total: number }> {
+  const search = new URLSearchParams();
+  if (params?.status) search.set('status', params.status);
+  if (params?.category) search.set('category', params.category);
+  if (params?.kecamatan) search.set('kecamatan', params.kecamatan);
+  if (params?.limit) search.set('limit', String(params.limit));
+  if (params?.offset) search.set('offset', String(params.offset));
 
-  const snap = await getDocs(q);
-  const reports = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Report));
-  const nextCursor = snap.docs.length === PAGE_SIZE ? snap.docs[snap.docs.length - 1] : null;
-  return { reports, nextCursor };
+  const res = await fetch(`/api/reports?${search.toString()}`);
+  if (!res.ok) {
+    throw new Error('Gagal memuat daftar laporan.');
+  }
+
+  const json = await res.json();
+  const list = (json.reports || []).map((r: {
+    id: string;
+    ticketNumber: string;
+    title: string;
+    description: string;
+    category: Report['category'];
+    severity: Report['severity'];
+    lat: number;
+    lng: number;
+    address: string;
+    kelurahan?: string;
+    kecamatan?: string;
+    media: { fileUrl: string }[];
+    status: ReportStatus;
+    authorId: string;
+    author?: { name: string };
+    assignedAgency?: string;
+    slaDeadline?: string;
+    confirmations?: { userId: string }[];
+    createdAt: string;
+    updatedAt: string;
+  }) => ({
+    id: r.id,
+    ticketNumber: r.ticketNumber,
+    title: r.title,
+    description: r.description,
+    category: r.category,
+    severity: r.severity,
+    location: { lat: r.lat, lng: r.lng },
+    address: r.address,
+    kelurahan: r.kelurahan,
+    kecamatan: r.kecamatan,
+    photoUrls: (r.media || []).map((m) => m.fileUrl),
+    status: r.status,
+    statusHistory: [],
+    authorId: r.authorId,
+    authorName: r.author?.name || 'Warga',
+    assignedAgency: r.assignedAgency,
+    slaDeadline: r.slaDeadline,
+    communityConfirmations: (r.confirmations || []).map((c) => c.userId),
+    createdAt: r.createdAt,
+    updatedAt: r.updatedAt,
+  }));
+
+  return { reports: list, total: json.total || 0 };
 }
 
-export async function getReportsByUser(uid: string): Promise<Report[]> {
-  // No composite index needed — filter then client-sort
-  const snap = await getDocs(
-    query(collection(getFirebaseDb(), REPORTS), where('authorId', '==', uid)),
-  );
-  return snap.docs
-    .map((d) => ({ id: d.id, ...d.data() } as Report))
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-}
-
-// ─── Status transition (append-only) ─────────────────────────────────────────
-
-export async function advanceStatus(
+export async function updateReportStatus(
   reportId: string,
-  entry: StatusHistoryEntry,
+  newStatus: ReportStatus,
+  actorId: string,
+  note?: string,
+  evidencePhotoUrl?: string,
 ): Promise<void> {
-  await updateDoc(doc(getFirebaseDb(), REPORTS, reportId), {
-    status:        entry.status,
-    statusHistory: arrayUnion(entry),
-    updatedAt:     serverTimestamp(),
+  const res = await fetch(`/api/reports/${reportId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ newStatus, actorId, note, evidencePhotoUrl }),
   });
+
+  if (!res.ok) {
+    const json = await res.json();
+    throw new Error(json.error || 'Gagal mengubah status laporan.');
+  }
 }
 
-// ─── Community confirmation ───────────────────────────────────────────────────
-
-export async function addCommunityConfirmation(reportId: string, userId: string): Promise<void> {
-  await updateDoc(doc(getFirebaseDb(), REPORTS, reportId), {
-    communityConfirmations: arrayUnion(userId),
-    updatedAt:              serverTimestamp(),
+export async function addCommunityConfirmation(reportId: string, userId: string, note?: string): Promise<void> {
+  const res = await fetch(`/api/reports/${reportId}/confirm`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, note }),
   });
-}
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/** Strip undefined values before any Firestore write — Firebase rejects undefined. */
-export function removeUndefined<T extends object>(obj: T): Partial<T> {
-  return Object.fromEntries(
-    Object.entries(obj).filter(([, v]) => v !== undefined),
-  ) as Partial<T>;
+  if (!res.ok) {
+    const json = await res.json();
+    throw new Error(json.error || 'Gagal menambahkan konfirmasi.');
+  }
 }

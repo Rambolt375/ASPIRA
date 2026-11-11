@@ -60,14 +60,14 @@ function StatCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-5 flex items-start gap-4">
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
+    <div className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-5 flex items-start gap-2.5 sm:gap-4 min-w-0 shadow-xs">
+      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
         {icon}
       </div>
-      <div>
-        <p className="text-2xl font-bold text-slate-900">{value}</p>
-        <p className="text-sm font-medium text-slate-700">{label}</p>
-        {sub && <p className="text-xs text-slate-400 mt-0.5">{sub}</p>}
+      <div className="min-w-0 flex-1">
+        <p className="text-lg sm:text-2xl font-black text-slate-900 leading-tight">{value}</p>
+        <p className="text-xs sm:text-sm font-bold text-slate-800 truncate mt-0.5">{label}</p>
+        {sub && <p className="text-[10px] sm:text-xs text-slate-500 font-medium truncate mt-0.5">{sub}</p>}
       </div>
     </div>
   );
@@ -91,15 +91,15 @@ function ReportCard({ report }: { report: Report }) {
         {categoryIcon[report.category] ?? '📋'}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-slate-900 truncate group-hover:text-emerald-700 transition-colors">
+        <p className="text-sm font-semibold text-slate-900 line-clamp-2 leading-snug group-hover:text-emerald-700 transition-colors">
           {report.title}
         </p>
-        <p className="text-xs text-slate-500 truncate mt-0.5">
+        <p className="text-xs text-slate-600 font-medium truncate mt-0.5">
           📍 {report.address || 'Kota Bogor'}
         </p>
         <div className="flex items-center gap-2 mt-2">
           <StatusBadge status={report.status} />
-          <span className="text-xs text-slate-400">{timeAgo(report.createdAt)}</span>
+          <span className="text-xs text-slate-500 font-medium">{timeAgo(report.createdAt)}</span>
         </div>
       </div>
     </Link>
@@ -205,10 +205,10 @@ export default function BerandaPage() {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-slate-200 p-5 h-24 animate-pulse">
-                <div className="w-10 h-10 bg-slate-100 rounded-xl mb-3" />
+              <div key={i} className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-5 h-20 sm:h-24 animate-pulse">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-slate-100 rounded-xl mb-2" />
                 <div className="h-3 bg-slate-100 rounded w-2/3" />
               </div>
             ))}
@@ -218,7 +218,7 @@ export default function BerandaPage() {
             {error}
           </div>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
             <StatCard
               label="Total Laporan"
               value={total}

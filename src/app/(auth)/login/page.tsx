@@ -9,7 +9,7 @@ import { Button, Input } from '@/components/ui';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, setUser } = useAuthStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -28,19 +28,12 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await loginUser(email.trim(), password);
+      const loggedUser = await loginUser(email.trim(), password);
+      setUser(loggedUser);
       router.replace('/beranda');
     } catch (err: unknown) {
-      const code = (err as { code?: string }).code ?? '';
-      if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
-        setError('Email atau kata sandi tidak sesuai.');
-      } else if (code === 'auth/invalid-email') {
-        setError('Format email tidak valid.');
-      } else if (code === 'auth/too-many-requests') {
-        setError('Terlalu banyak percobaan. Coba lagi nanti.');
-      } else {
-        setError('Terjadi kesalahan. Coba lagi.');
-      }
+      const msg = err instanceof Error ? err.message : 'Email atau kata sandi tidak sesuai.';
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -103,7 +96,7 @@ export default function LoginPage() {
                 required
                 autoComplete="current-password"
                 disabled={loading}
-                className="w-full rounded-xl border border-slate-300 px-3 py-2 pr-10 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent disabled:bg-slate-50 disabled:text-slate-400"
+                className="w-full rounded-xl border border-slate-300 px-3 py-2 pr-10 text-sm text-slate-900 placeholder:text-slate-500 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent disabled:bg-slate-50 disabled:text-slate-400"
               />
               <button
                 type="button"

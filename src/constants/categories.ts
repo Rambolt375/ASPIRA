@@ -1,14 +1,19 @@
 import type { ReportCategory, ReportStatus, SeverityLevel } from '@/types';
 
-export const REPORT_CATEGORIES: Record<ReportCategory, string> = {
-  JALAN: 'Jalan',
-  JEMBATAN: 'Jembatan',
-  DRAINASE: 'Drainase / Got',
-  LAMPU_JALAN: 'Lampu Jalan',
-  TAMAN: 'Taman & RTH',
-  SAMPAH: 'Sampah',
-  BANJIR: 'Banjir',
-  LAINNYA: 'Lainnya',
+export interface CategoryMeta {
+  label: string;
+  icon: string;
+}
+
+export const REPORT_CATEGORIES: Record<ReportCategory, CategoryMeta> = {
+  JALAN:       { label: 'Jalan', icon: '🛣️' },
+  JEMBATAN:    { label: 'Jembatan', icon: '🌉' },
+  DRAINASE:    { label: 'Drainase / Got', icon: '🌊' },
+  LAMPU_JALAN: { label: 'Lampu Jalan', icon: '💡' },
+  TAMAN:       { label: 'Taman & RTH', icon: '🌳' },
+  SAMPAH:      { label: 'Sampah', icon: '🗑️' },
+  BANJIR:      { label: 'Banjir', icon: '🌧️' },
+  LAINNYA:     { label: 'Lainnya', icon: '📋' },
 };
 
 export const SEVERITY_LEVELS: Record<SeverityLevel, { label: string; color: string }> = {

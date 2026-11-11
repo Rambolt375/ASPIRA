@@ -1,5 +1,4 @@
 import { REPORT_STATUSES, STATUS_PIPELINE } from '@/constants/categories';
-import { palette } from '@/constants/theme';
 import type { ReportStatus, StatusHistoryEntry } from '@/types';
 
 interface Props {
