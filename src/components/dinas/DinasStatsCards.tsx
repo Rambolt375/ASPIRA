@@ -24,83 +24,112 @@ export default function DinasStatsCards({
   onFilterHandling,
 }: StatsProps) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-      {/* 1. Laporan Mendesak / Kritis */}
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-8">
+      {/* 1. Prioritas Kritis */}
       <div
         onClick={onFilterUrgent}
-        className="p-5 rounded-2xl bg-gradient-to-br from-rose-50 to-red-50/60 dark:from-rose-950/30 dark:to-red-900/20 border border-rose-200/80 dark:border-rose-900/50 cursor-pointer hover:shadow-md transition-all group"
+        className="group relative p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs hover:border-rose-300 dark:hover:border-rose-800 hover:shadow-md transition-all cursor-pointer"
       >
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-rose-700 dark:text-rose-400 uppercase tracking-wider">
+          <span className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">
             Prioritas Kritis
           </span>
-          <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
+          <span className="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-900/50 flex items-center justify-center text-sm">
+            🚨
+          </span>
         </div>
-        <p className="mt-3 text-3xl font-extrabold text-rose-800 dark:text-rose-300">
-          {stats.criticalCount}
-        </p>
-        <p className="mt-1 text-xs text-rose-600/80 dark:text-rose-400/80">
+        <div className="mt-4 flex items-baseline gap-2">
+          <p className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+            {stats.criticalCount}
+          </p>
+          <span className="text-xs font-bold text-rose-600 dark:text-rose-400">
+            Kasus Mendesak
+          </span>
+        </div>
+        <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
           {stats.slaBreachedCount > 0 ? (
-            <span className="font-semibold text-red-600 dark:text-red-400">
-              ⚠️ {stats.slaBreachedCount} Melewati Batas SLA
+            <span className="inline-flex items-center gap-1 font-semibold text-rose-600 dark:text-rose-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
+              {stats.slaBreachedCount} Melewati SLA
             </span>
           ) : (
-            'Tingkat Tinggi & Kritis aktif'
+            'Respons tanggap darurat'
           )}
-        </p>
+        </div>
       </div>
 
-      {/* 2. Menunggu Verifikasi & Survei */}
+      {/* 2. Butuh Verifikasi */}
       <div
         onClick={onFilterPending}
-        className="p-5 rounded-2xl bg-gradient-to-br from-amber-50 to-yellow-50/60 dark:from-amber-950/30 dark:to-yellow-900/20 border border-amber-200/80 dark:border-amber-900/50 cursor-pointer hover:shadow-md transition-all"
+        className="group relative p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs hover:border-amber-300 dark:hover:border-amber-800 hover:shadow-md transition-all cursor-pointer"
       >
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+          <span className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
             Butuh Verifikasi
           </span>
-          <span className="text-lg">⏳</span>
+          <span className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-100 dark:border-amber-900/50 flex items-center justify-center text-sm">
+            ⏳
+          </span>
         </div>
-        <p className="mt-3 text-3xl font-extrabold text-amber-800 dark:text-amber-300">
-          {stats.pendingVerification}
-        </p>
-        <p className="mt-1 text-xs text-amber-600/80 dark:text-amber-400/80">
-          Status Diterima / Menunggu Cek
+        <div className="mt-4 flex items-baseline gap-2">
+          <p className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+            {stats.pendingVerification}
+          </p>
+          <span className="text-xs font-bold text-amber-600 dark:text-amber-400">
+            Laporan Masuk
+          </span>
+        </div>
+        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+          Tahap Diterima & Validasi Lapangan
         </p>
       </div>
 
-      {/* 3. Sedang Ditangani Dinas */}
+      {/* 3. Dalam Penanganan */}
       <div
         onClick={onFilterHandling}
-        className="p-5 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50/60 dark:from-blue-950/30 dark:to-indigo-900/20 border border-blue-200/80 dark:border-blue-900/50 cursor-pointer hover:shadow-md transition-all"
+        className="group relative p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs hover:border-blue-300 dark:hover:border-blue-800 hover:shadow-md transition-all cursor-pointer"
       >
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wider">
-            Dalam Penanganan
+          <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+            Dalam Pengerjaan
           </span>
-          <span className="text-lg">🛠️</span>
+          <span className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/50 flex items-center justify-center text-sm">
+            🛠️
+          </span>
         </div>
-        <p className="mt-3 text-3xl font-extrabold text-blue-800 dark:text-blue-300">
-          {stats.activeHandling}
-        </p>
-        <p className="mt-1 text-xs text-blue-600/80 dark:text-blue-400/80">
-          Pekerjaan fisik sedang berjalan
+        <div className="mt-4 flex items-baseline gap-2">
+          <p className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+            {stats.activeHandling}
+          </p>
+          <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
+            Pekerjaan Fisik
+          </span>
+        </div>
+        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+          Regu teknis dinas sedang bertugas
         </p>
       </div>
 
-      {/* 4. Total Selesai / Teratasi */}
-      <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50/60 dark:from-emerald-950/30 dark:to-teal-900/20 border border-emerald-200/80 dark:border-emerald-900/50">
+      {/* 4. Tuntas & Pemeliharaan */}
+      <div className="group relative p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs transition-all">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
+          <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
             Tuntas / Perawatan
           </span>
-          <span className="text-lg">✅</span>
+          <span className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-900/50 flex items-center justify-center text-sm">
+            ✅
+          </span>
         </div>
-        <p className="mt-3 text-3xl font-extrabold text-emerald-800 dark:text-emerald-300">
-          {stats.resolvedCount}
-        </p>
-        <p className="mt-1 text-xs text-emerald-600/80 dark:text-emerald-400/80">
-          Dari total {stats.totalReports} laporan masuk
+        <div className="mt-4 flex items-baseline gap-2">
+          <p className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+            {stats.resolvedCount}
+          </p>
+          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+            Selesai 100%
+          </span>
+        </div>
+        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+          Dari total {stats.totalReports} akumulasi laporan
         </p>
       </div>
     </div>

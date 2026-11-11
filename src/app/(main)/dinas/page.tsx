@@ -69,7 +69,6 @@ export default function DinasDashboardPage() {
   // Filters
   const [selectedAgency, setSelectedAgency] = useState('SEMUA');
   const [selectedStatus, setSelectedStatus] = useState<string>('SEMUA');
-  const [selectedSeverity, setSelectedSeverity] = useState<string>('SEMUA');
   const [searchQuery, setSearchQuery] = useState('');
   const [urgentOnly, setUrgentOnly] = useState(false);
 
@@ -97,7 +96,6 @@ export default function DinasDashboardPage() {
       const params = new URLSearchParams();
       if (selectedAgency !== 'SEMUA') params.set('agency', selectedAgency);
       if (selectedStatus !== 'SEMUA') params.set('status', selectedStatus);
-      if (selectedSeverity !== 'SEMUA') params.set('severity', selectedSeverity);
       if (searchQuery.trim()) params.set('search', searchQuery.trim());
       if (urgentOnly) params.set('urgent', 'true');
 
@@ -109,44 +107,42 @@ export default function DinasDashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedAgency, selectedStatus, selectedSeverity, searchQuery, urgentOnly]);
+  }, [selectedAgency, selectedStatus, searchQuery, urgentOnly]);
 
   useEffect(() => {
     fetchStats();
     fetchReports();
   }, [fetchStats, fetchReports]);
 
-  const isGovernmentOfficer =
-    user?.role === 'PETUGAS' || user?.role === 'LOCAL_GOVERNMENT' || user?.role === 'ADMIN';
-
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Simulator Switcher for judges */}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 transition-colors">
+      {/* 1. Simulator Switcher (Judges Persona Switcher) */}
       <RoleQuickSwitch />
 
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      {/* 2. Page Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="px-3 py-1 text-xs font-bold uppercase rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-slate-200/80 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700">
               Pemerintah Kota Bogor
             </span>
-            <span className="text-xs text-slate-400 font-mono">
-              Sistem Disposisi Terpadu
+            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Sistem Disposisi & Pengawasan Terpadu
             </span>
           </div>
-          <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
+          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
             Portal Operasional Dinas & Wilayah
           </h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Kendali disposisi penugasan teknis, pengawasan SLA, dan audit eskalasi perbaikan fisik lapangan.
+          <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-400 max-w-3xl leading-relaxed">
+            Pusat kendali disposisi penugasan teknis dinas, pengawasan batas waktu (SLA), dan audit eskalasi perbaikan infrastruktur Kota Bogor.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           <button
             onClick={() => setIsAnnouncementModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-sm font-semibold shadow-sm transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold shadow-sm transition-all"
           >
             📢 Siarkan Pengumuman Kota
           </button>
@@ -155,7 +151,7 @@ export default function DinasDashboardPage() {
               fetchStats();
               fetchReports();
             }}
-            className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
+            className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors shadow-xs"
             title="Muat Ulang Data"
           >
             🔄
@@ -163,24 +159,7 @@ export default function DinasDashboardPage() {
         </div>
       </div>
 
-      {/* Access Notice if user is citizen */}
-      {!isGovernmentOfficer && (
-        <div className="mb-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🛡️</span>
-            <div>
-              <p className="text-sm font-bold text-amber-900 dark:text-amber-200">
-                Mode Peninjauan Akses Terbatas
-              </p>
-              <p className="text-xs text-amber-700 dark:text-amber-300">
-                Anda sedang melihat portal dalam peran Warga. Untuk menguji aksi penugasan dan perubahan status resmi, gunakan tombol Persona di atas.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* KPI Stats Cards */}
+      {/* 3. Executive KPI Stats Cards */}
       <DinasStatsCards
         stats={stats}
         onFilterUrgent={() => {
@@ -197,22 +176,22 @@ export default function DinasDashboardPage() {
         }}
       />
 
-      {/* Filter Toolbar */}
-      <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm mb-6 space-y-4">
+      {/* 4. Filter Toolbar (Clean Light/Dark Cohesive) */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs mb-6 space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           {/* OPD Selector */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+          <div className="flex items-center gap-2.5">
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider whitespace-nowrap">
               Instansi/OPD:
             </span>
             <select
               value={selectedAgency}
               onChange={(e) => setSelectedAgency(e.target.value)}
-              className="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-semibold outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
             >
               {DINAS_LIST.map((d) => (
                 <option key={d} value={d}>
-                  {d === 'UNASSIGNED' ? '⚠️ Belum Ditugaskan ke Dinas' : d}
+                  {d === 'UNASSIGNED' ? '⚠️ Belum Didisposisikan' : d}
                 </option>
               ))}
             </select>
@@ -225,35 +204,37 @@ export default function DinasDashboardPage() {
               placeholder="Cari No. Tiket, Judul, atau Alamat..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-none focus:ring-2 focus:ring-emerald-500 transition-colors placeholder:text-slate-400"
             />
             <span className="absolute left-3 top-2.5 text-slate-400 text-xs">🔍</span>
           </div>
 
           {/* Quick toggle urgent */}
-          <label className="inline-flex items-center gap-2 cursor-pointer">
+          <label className="inline-flex items-center gap-2 cursor-pointer select-none">
             <input
               type="checkbox"
               checked={urgentOnly}
               onChange={(e) => setUrgentOnly(e.target.checked)}
-              className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500"
+              className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 cursor-pointer"
             />
-            <span className="text-xs font-semibold text-rose-600 dark:text-rose-400">
+            <span className="text-xs font-bold text-rose-600 dark:text-rose-400">
               🚨 Hanya Prioritas Kritis/Tinggi
             </span>
           </label>
         </div>
 
-        {/* Secondary Filters (Status & Severity) */}
-        <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-          <span className="text-xs font-medium text-slate-400 mr-1">Status:</span>
+        {/* Status Horizontal Pills */}
+        <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 mr-1.5">
+            Filter Status:
+          </span>
           {['SEMUA', 'DITERIMA', 'VERIFIKASI', 'DICEK', 'DITUGASKAN', 'DALAM_PENANGANAN', 'DIATASI', 'PENINJAUAN', 'PERAWATAN', 'DITOLAK'].map((st) => (
             <button
               key={st}
               onClick={() => setSelectedStatus(st)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 selectedStatus === st
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
@@ -263,38 +244,40 @@ export default function DinasDashboardPage() {
         </div>
       </div>
 
-      {/* Main Reports Table */}
-      <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+      {/* 5. Main Reports Table (Clean White/Dark Cards) */}
+      <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
         {loading ? (
-          <div className="py-20 text-center">
-            <div className="w-8 h-8 mx-auto border-3 border-blue-600 border-t-transparent rounded-full animate-spin mb-3" />
-            <p className="text-sm font-semibold text-slate-500">Memuat laporan dinas...</p>
+          <div className="py-24 text-center">
+            <div className="w-8 h-8 mx-auto border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mb-3" />
+            <p className="text-sm font-bold text-slate-600 dark:text-slate-400">
+              Menghubungkan ke pusat data operasional...
+            </p>
           </div>
         ) : reports.length === 0 ? (
-          <div className="py-20 text-center">
-            <span className="text-4xl">📋</span>
-            <h3 className="mt-3 text-base font-bold text-slate-900 dark:text-white">
+          <div className="py-24 text-center px-4">
+            <span className="text-5xl">📋</span>
+            <h3 className="mt-4 text-base font-bold text-slate-900 dark:text-white">
               Tidak ada laporan dalam filter ini
             </h3>
-            <p className="mt-1 text-xs text-slate-500">
-              Ubah kriteria instansi atau status di atas untuk melihat data lain.
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+              Silakan atur ulang filter instansi atau status di atas untuk melihat laporan lainnya.
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50/75 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  <th className="py-3.5 px-4">Laporan / Tiket</th>
-                  <th className="py-3.5 px-4">Tingkat Keparahan</th>
-                  <th className="py-3.5 px-4">Status & Alur</th>
-                  <th className="py-3.5 px-4">Instansi & PIC</th>
-                  <th className="py-3.5 px-4">Skor Keaslian AI</th>
-                  <th className="py-3.5 px-4">Tenggat Waktu SLA</th>
-                  <th className="py-3.5 px-4 text-right">Aksi Operasional</th>
+                <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <th className="py-4 px-4 sm:px-5">Tiket & Kerusakan</th>
+                  <th className="py-4 px-4">Keparahan</th>
+                  <th className="py-4 px-4">Status Siklus</th>
+                  <th className="py-4 px-4">Instansi Wewenang</th>
+                  <th className="py-4 px-4">Validasi AI</th>
+                  <th className="py-4 px-4">Tenggat SLA</th>
+                  <th className="py-4 px-4 text-right">Tindakan Resmi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-xs">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
                 {reports.map((r) => {
                   const isSlaBreached =
                     r.slaDeadline &&
@@ -304,105 +287,107 @@ export default function DinasDashboardPage() {
                   return (
                     <tr
                       key={r.id}
-                      className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
+                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
                     >
-                      {/* 1. Laporan / Tiket */}
-                      <td className="py-4 px-4 max-w-xs">
+                      {/* 1. Tiket & Judul */}
+                      <td className="py-4 px-4 sm:px-5 max-w-xs">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono font-bold text-blue-600 dark:text-blue-400 text-[11px]">
+                          <span className="font-mono font-extrabold text-emerald-600 dark:text-emerald-400 text-xs">
                             {r.ticketNumber}
                           </span>
-                          <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] text-slate-600 dark:text-slate-300 font-medium">
+                          <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-600 dark:text-slate-300">
                             {r.category}
                           </span>
                         </div>
-                        <p className="mt-1 font-bold text-slate-900 dark:text-white line-clamp-1">
+                        <p className="mt-1 font-bold text-slate-900 dark:text-white line-clamp-1 text-sm">
                           {r.title}
                         </p>
-                        <p className="text-[11px] text-slate-500 line-clamp-1">
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
                           📍 {r.address}
                         </p>
                       </td>
 
-                      {/* 2. Severity */}
+                      {/* 2. Keparahan */}
                       <td className="py-4 px-4">
                         <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold ${
                             r.severity === 'KRITIS'
-                              ? 'bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300'
+                              ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-200 dark:border-rose-900'
                               : r.severity === 'TINGGI'
-                              ? 'bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-300'
+                              ? 'bg-orange-100 text-orange-800 dark:bg-orange-950/80 dark:text-orange-300 border border-orange-200 dark:border-orange-900'
                               : r.severity === 'SEDANG'
-                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300'
-                              : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
+                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-200 dark:border-amber-900'
+                              : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900'
                           }`}
                         >
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${
-                              r.severity === 'KRITIS' ? 'bg-red-600 animate-ping' : 'bg-current'
+                              r.severity === 'KRITIS' ? 'bg-rose-600 animate-ping' : 'bg-current'
                             }`}
                           />
                           {r.severity}
                         </span>
                       </td>
 
-                      {/* 3. Status */}
+                      {/* 3. Status Siklus */}
                       <td className="py-4 px-4">
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                        <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
                           {r.status}
                         </span>
                         {r.statusHistory && r.statusHistory[0] && (
-                          <p className="mt-1 text-[10px] text-slate-400">
+                          <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500">
                             oleh {r.statusHistory[0].actor.name}
                           </p>
                         )}
                       </td>
 
-                      {/* 4. Instansi */}
-                      <td className="py-4 px-4 max-w-[180px]">
+                      {/* 4. Instansi Wewenang */}
+                      <td className="py-4 px-4 max-w-[200px]">
                         {r.assignedAgency ? (
-                          <p className="font-semibold text-slate-800 dark:text-slate-200 line-clamp-2">
+                          <p className="font-semibold text-slate-800 dark:text-slate-200 line-clamp-2 leading-tight">
                             🏢 {r.assignedAgency}
                           </p>
                         ) : (
-                          <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400">
                             ⚠️ Belum Didisposisi
                           </span>
                         )}
                       </td>
 
-                      {/* 5. Skor AI */}
+                      {/* 5. Validasi AI */}
                       <td className="py-4 px-4">
                         {r.verification ? (
                           <div>
-                            <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                            <span className="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">
                               {Math.round(r.verification.authenticityScore * 100)}%
                             </span>
-                            <p className="text-[10px] text-slate-400">
+                            <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500">
                               {r.verification.isLegitimate ? 'Keaslian Tinggi' : 'Perlu Tinjauan'}
                             </p>
                           </div>
                         ) : (
-                          <span className="text-slate-400 text-[11px]">—</span>
+                          <span className="text-slate-400 text-xs">—</span>
                         )}
                       </td>
 
-                      {/* 6. SLA */}
+                      {/* 6. Tenggat SLA */}
                       <td className="py-4 px-4">
                         {r.slaDeadline ? (
                           <div
-                            className={`text-[11px] font-semibold ${
+                            className={`text-xs font-bold ${
                               isSlaBreached
-                                ? 'text-rose-600 dark:text-rose-400 font-bold'
-                                : 'text-slate-600 dark:text-slate-300'
+                                ? 'text-rose-600 dark:text-rose-400'
+                                : 'text-slate-700 dark:text-slate-300'
                             }`}
                           >
-                            {isSlaBreached && '⚠️ Terlewat: '}
-                            {new Date(r.slaDeadline).toLocaleDateString('id-ID', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric',
-                            })}
+                            {isSlaBreached ? '⚠️ Terlewat' : '⏳ Target'}
+                            <p className="text-[10px] font-normal text-slate-500">
+                              {new Date(r.slaDeadline).toLocaleDateString('id-ID', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                              })}
+                            </p>
                           </div>
                         ) : (
                           <span className="text-slate-400 text-[11px]">Belum diatur</span>
@@ -410,25 +395,23 @@ export default function DinasDashboardPage() {
                       </td>
 
                       {/* 7. Action Buttons */}
-                      <td className="py-4 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                      <td className="py-4 px-4 sm:px-5 text-right">
+                        <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => setActiveReportForAssign(r)}
-                            className="px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 font-semibold text-[11px] transition-colors"
-                            title="Disposisikan ke instansi/petugas"
+                            className="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 text-blue-700 dark:text-blue-300 font-bold text-xs border border-blue-200/80 dark:border-blue-800 transition-colors"
                           >
                             Disposisi
                           </button>
                           <button
                             onClick={() => setActiveReportForStatus(r)}
-                            className="px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 font-semibold text-[11px] transition-colors"
-                            title="Perbarui status resmi"
+                            className="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 font-bold text-xs border border-emerald-200/80 dark:border-emerald-800 transition-colors"
                           >
                             Ubah Status
                           </button>
                           <Link
                             href={`/laporan/${r.id}`}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            className="p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors"
                             title="Buka rincian lengkap"
                           >
                             ↗️

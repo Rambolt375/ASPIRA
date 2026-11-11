@@ -45,39 +45,52 @@ export default function RoleQuickSwitch() {
     setUser(updatedUser);
   }
 
+  const isDinas = user?.role === 'PETUGAS' || user?.role === 'LOCAL_GOVERNMENT' || user?.role === 'ADMIN';
+
   return (
-    <div className="mb-6 p-4 rounded-2xl bg-slate-900 text-white dark:bg-slate-800 border border-slate-700/60 shadow-lg">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+    <div className="mb-8 p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm transition-all">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800/80 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold shrink-0">
+            🏛️
+          </div>
           <div>
-            <p className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-              Mode Evaluasi Juri & Petugas
-            </p>
-            <p className="text-sm font-bold text-white">
-              Login Aktif:{' '}
-              <span className="text-emerald-400">
-                {user?.name || 'Belum Login'}
-              </span>{' '}
-              <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                {user?.role || 'GUEST'}
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Hak Akses Aktif:
+              </span>
+              <span className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold uppercase ${
+                isDinas
+                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                  : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+              }`}>
+                {user?.role || 'USER'}
+              </span>
+            </div>
+            <p className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+              {user?.name || 'Pengguna Publik'}{' '}
+              <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
+                ({user?.email || 'Tamu'})
               </span>
             </p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-slate-400 mr-1 hidden md:inline">Ganti Persona:</span>
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 mr-1 hidden sm:inline">
+            Uji Coba Persona:
+          </span>
           {DEMO_PERSONAS.map((p) => {
             const isActive = user?.role === p.role;
             return (
               <button
                 key={p.role}
+                type="button"
                 onClick={() => handleSwitch(p)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                   isActive
-                    ? 'bg-emerald-500 text-slate-950 font-bold shadow-md shadow-emerald-500/30'
-                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700'
+                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm font-bold'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
                 }`}
               >
                 {p.name} ({p.role})
