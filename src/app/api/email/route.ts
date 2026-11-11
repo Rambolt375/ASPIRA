@@ -4,7 +4,7 @@ import {
   sendEmail,
   buildReportConfirmationEmail,
   buildStatusUpdateEmail,
-} from '@/lib/email/nodemailer';
+} from '@/lib/email';
 import { REPORT_STATUSES } from '@/constants/categories';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://aspira-production.up.railway.app';

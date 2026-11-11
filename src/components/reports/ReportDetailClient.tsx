@@ -19,6 +19,7 @@ import { Button } from '@/components/ui';
 import { REPORT_STATUSES, STATUS_PIPELINE, SEVERITY_LEVELS } from '@/constants/categories';
 import { STAGE_ROLES, getReportSlaInfo } from '@/constants/pipelineStages';
 import { palette } from '@/constants/theme';
+import { getReport } from '@/services/reports';
 import type { Report, ReportStatus } from '@/types';
 
 interface Props {
@@ -163,11 +164,11 @@ export default function ReportDetailClient({ initialReport }: Props) {
 
       if (!res.ok) throw new Error('Gagal memperbarui status laporan.');
 
-      // Refresh report data
-      const refreshRes = await fetch(`/api/reports/${report.id}`);
-      const refreshJson = await refreshRes.json();
-      const updatedReport = refreshJson.report;
-      setReport(updatedReport);
+      // Refresh report data via getReport so all relational fields and timestamps are mapped correctly
+      const updatedReport = await getReport(report.id);
+      if (updatedReport) {
+        setReport(updatedReport);
+      }
 
       // Send real email notification to reporter
       const oldStatusLabel = REPORT_STATUSES[report.status]?.label ?? report.status;
@@ -662,7 +663,28 @@ export default function ReportDetailClient({ initialReport }: Props) {
 
           <div className="relative border-l-2 border-emerald-200 ml-4 space-y-6 pl-6">
             {(report.statusHistory || []).map((entry, idx) => {
-              const meta = STAGE_ROLES[entry.status] || STAGE_ROLES.DITERIMA;
+              // Support both mapped properties (status, timestamp) and raw Prisma fields (newStatus, createdAt)
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const raw = entry as any;
+              const statusVal = (entry.status || raw.newStatus || 'DITERIMA') as ReportStatus;
+              const timeVal = entry.timestamp || raw.createdAt || raw.updatedAt;
+              const meta = STAGE_ROLES[statusVal] || STAGE_ROLES.DITERIMA;
+              const actorName = entry.actorName || raw.actor?.name;
+              const photo = entry.photoUrl || raw.evidencePhotoUrl;
+
+              let formattedDate = '-';
+              if (timeVal) {
+                const d = new Date(timeVal);
+                formattedDate = !isNaN(d.getTime())
+                  ? d.toLocaleString('id-ID', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
+                  : '-';
+              }
 
               return (
                 <div key={idx} className="relative group">
@@ -674,7 +696,7 @@ export default function ReportDetailClient({ initialReport }: Props) {
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-slate-900">
-                          {REPORT_STATUSES[entry.status]?.label ?? entry.status}
+                          {REPORT_STATUSES[statusVal]?.label ?? statusVal}
                         </span>
                         <span
                           className={`px-2 py-0.5 rounded text-[10px] font-bold border ${meta.badgeColor}`}
@@ -683,7 +705,7 @@ export default function ReportDetailClient({ initialReport }: Props) {
                         </span>
                       </div>
                       <span className="text-[11px] text-slate-400 font-mono">
-                        {new Date(entry.timestamp).toLocaleString('id-ID')}
+                        {formattedDate}
                       </span>
                     </div>
 
@@ -691,8 +713,8 @@ export default function ReportDetailClient({ initialReport }: Props) {
                     <div className="flex items-center gap-2 text-xs text-slate-600 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
                       <span className="text-slate-400 text-[11px]">Entitas Pemeriksa:</span>
                       <strong className="text-slate-800 font-semibold">{meta.roleName}</strong>
-                      {entry.actorName && (
-                        <span className="text-slate-500 text-[11px]">({entry.actorName})</span>
+                      {actorName && (
+                        <span className="text-slate-500 text-[11px]">({actorName})</span>
                       )}
                     </div>
 
@@ -704,9 +726,9 @@ export default function ReportDetailClient({ initialReport }: Props) {
                     )}
 
                     {/* Evidence Photo */}
-                    {entry.photoUrl && (
+                    {photo && (
                       <div className="mt-2 w-36 aspect-video rounded-xl overflow-hidden border border-slate-200 shadow-xs">
-                        <img src={entry.photoUrl} alt="Bukti status" className="w-full h-full object-cover" />
+                        <img src={photo} alt="Bukti status" className="w-full h-full object-cover" />
                       </div>
                     )}
                   </div>

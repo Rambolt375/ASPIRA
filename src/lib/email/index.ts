@@ -1,18 +1,24 @@
 /**
- * ASPIRA Email Service — powered by Nodemailer (Gmail SMTP)
+ * ASPIRA Unified Email Service
  *
- * Mengirimkan email asli dari akun Google resmi pengembang / instansi
- * tanpa batasan domain atau pembatasan daftar pengujian.
+ * Menggunakan Resend HTTPS API (Port 443) yang tidak pernah diblokir
+ * oleh firewall Railway atau penyedia cloud hosting lainnya.
+ *
+ * Otomatis mengalihkan penerima ke reyza1098@gmail.com jika menggunakan
+ * testing domain default (onboarding@resend.dev) agar email 100% terkirim.
  */
 
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
-const SMTP_HOST = process.env.SMTP_HOST || 'smtp.gmail.com';
-const SMTP_PORT = Number(process.env.SMTP_PORT || 465);
-const SMTP_USER = process.env.SMTP_USER || 'reyza1098@gmail.com';
-const SMTP_PASS = process.env.SMTP_PASS || '';
+const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
+
 const FROM_EMAIL =
-  process.env.SMTP_FROM || `ASPIRA Kota Bogor <${SMTP_USER}>`;
+  process.env.RESEND_FROM_EMAIL || 'ASPIRA Kota Bogor <onboarding@resend.dev>';
+
+const RESEND_TEST_RECIPIENT =
+  process.env.RESEND_TEST_RECIPIENT || 'reyza1098@gmail.com';
+
+const resend = new Resend(RESEND_API_KEY);
 
 export interface EmailPayload {
   to: string | string[];
@@ -23,45 +29,81 @@ export interface EmailPayload {
 export async function sendEmail(
   payload: EmailPayload
 ): Promise<{ ok: boolean; deliveredTo?: string; error?: string }> {
-  if (!SMTP_PASS) {
-    console.warn('[ASPIRA Email] SMTP_PASS belum dikonfigurasi.');
-    return {
-      ok: false,
-      error: 'SMTP_PASS (Sandi Aplikasi Google) belum dikonfigurasi.',
-    };
+  if (!RESEND_API_KEY) {
+    console.warn('[ASPIRA Email] RESEND_API_KEY tidak tersedia.');
+    return { ok: false, error: 'RESEND_API_KEY belum dikonfigurasi.' };
   }
 
-  const recipients = Array.isArray(payload.to) ? payload.to : [payload.to];
-  const recipientList = recipients.join(', ');
+  const rawRecipients = Array.isArray(payload.to) ? payload.to : [payload.to];
+  const originalToList = rawRecipients.join(', ');
 
   try {
-    const transporter = nodemailer.createTransport({
-      host: SMTP_HOST,
-      port: SMTP_PORT,
-      secure: SMTP_PORT === 465, // true for 465, false for 587
-      auth: {
-        user: SMTP_USER,
-        pass: SMTP_PASS,
-      },
-    });
-
-    const info = await transporter.sendMail({
+    // 1. Percobaan kirim ke penerima asli
+    const { data, error } = await resend.emails.send({
       from: FROM_EMAIL,
-      to: recipients,
+      to: rawRecipients,
       subject: payload.subject,
       html: payload.html,
     });
 
-    console.log(`[ASPIRA Email] Terkirim ke [${recipientList}]:`, info.messageId);
-    return { ok: true, deliveredTo: recipientList };
+    if (!error && data) {
+      console.log(`[ASPIRA Email] Berhasil dikirim ke ${originalToList}:`, data.id);
+      return { ok: true, deliveredTo: originalToList };
+    }
+
+    // 2. Jika ditolak karena batasan testing domain Resend (hanya boleh ke pemilik akun)
+    const errorMsg = error?.message || '';
+    const isDomainRestriction =
+      errorMsg.includes('only send testing emails') ||
+      errorMsg.includes('verify a domain') ||
+      errorMsg.includes('validation_error');
+
+    if (isDomainRestriction) {
+      console.warn(
+        `[ASPIRA Email] Testing domain aktif. Mengalihkan pengiriman dari [${originalToList}] ke [${RESEND_TEST_RECIPIENT}].`
+      );
+
+      const banner = `
+        <div style="background:#fffbeb; border:1px solid #fef3c7; border-left:4px solid #f59e0b; padding:12px 16px; margin-bottom:20px; border-radius:8px; font-size:12px; color:#92400e;">
+          ⚠️ <strong>Pemberitahuan Sistem Pengujian ASPIRA:</strong><br/>
+          Notifikasi ini ditujukan untuk: <code>${originalToList}</code>.<br/>
+          Dialihkan langsung ke email Anda (<code>${RESEND_TEST_RECIPIENT}</code>) sebagai pemilik akun pengembang agar dapat diuji secara nyata.
+        </div>
+      `;
+
+      const fallbackSubject = `[ASPIRA Bogor] ${payload.subject}`;
+      const fallbackHtml = payload.html.replace(
+        '<div class="body">',
+        `<div class="body">${banner}`
+      );
+
+      const fallbackRes = await resend.emails.send({
+        from: FROM_EMAIL,
+        to: [RESEND_TEST_RECIPIENT],
+        subject: fallbackSubject,
+        html: fallbackHtml,
+      });
+
+      if (!fallbackRes.error) {
+        console.log(`[ASPIRA Email] Fallback berhasil dikirim ke ${RESEND_TEST_RECIPIENT}`);
+        return {
+          ok: true,
+          deliveredTo: `${RESEND_TEST_RECIPIENT} (Terkirim via Mode Uji Coba ASPIRA)`,
+        };
+      }
+
+      return { ok: false, error: fallbackRes.error.message };
+    }
+
+    return { ok: false, error: errorMsg };
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Unknown SMTP error';
-    console.error('[ASPIRA Email] Gagal kirim email via SMTP:', msg);
+    const msg = err instanceof Error ? err.message : 'Unknown error';
+    console.error('[ASPIRA Email] Exception:', msg);
     return { ok: false, error: msg };
   }
 }
 
-// ─── Email Templates ──────────────────────────────────────────────────────────
+// ─── Templates ───────────────────────────────────────────────────────────────
 
 function baseLayout(content: string): string {
   return `
@@ -72,7 +114,7 @@ function baseLayout(content: string): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ASPIRA Kota Bogor</title>
   <style>
-    body { margin: 0; padding: 0; background: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    body { margin: 0; padding: 0; background: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
     .wrapper { max-width: 600px; margin: 32px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
     .header { background: linear-gradient(135deg, #064e3b 0%, #065f46 100%); padding: 28px 32px; }
     .header-title { color: #ffffff; font-size: 22px; font-weight: 700; margin: 0; }
@@ -98,7 +140,7 @@ function baseLayout(content: string): string {
       ${content}
     </div>
     <div class="footer">
-      Email resmi ini dikirimkan melalui gerbang komunikasi ASPIRA Kota Bogor.<br/>
+      Email ini dikirim otomatis oleh sistem ASPIRA Kota Bogor.<br/>
       Jangan balas email ini — untuk tindak lanjut, kunjungi portal resmi ASPIRA.<br/>
       © 2026 Pemerintah Kota Bogor — ASPIRA
     </div>
@@ -107,7 +149,6 @@ function baseLayout(content: string): string {
 </html>`;
 }
 
-/** Email konfirmasi saat laporan pertama kali diterima sistem */
 export function buildReportConfirmationEmail(opts: {
   authorName: string;
   ticketNumber: string;
@@ -141,7 +182,6 @@ export function buildReportConfirmationEmail(opts: {
   `);
 }
 
-/** Email notifikasi saat dinas/petugas update status laporan */
 export function buildStatusUpdateEmail(opts: {
   authorName: string;
   ticketNumber: string;
