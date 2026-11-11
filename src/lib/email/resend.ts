@@ -17,32 +17,84 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL =
   process.env.RESEND_FROM_EMAIL || 'ASPIRA Bogor <onboarding@resend.dev>';
 
+// Akun pemilik Resend untuk pengujian otomatis jika belum ada domain kustom
+const RESEND_TEST_RECIPIENT =
+  process.env.RESEND_TEST_RECIPIENT || 'reyza1098@gmail.com';
+
 export interface EmailPayload {
   to: string | string[];
   subject: string;
   html: string;
 }
 
-export async function sendEmail(payload: EmailPayload): Promise<{ ok: boolean; error?: string }> {
+export async function sendEmail(
+  payload: EmailPayload
+): Promise<{ ok: boolean; deliveredTo?: string; error?: string }> {
   if (!process.env.RESEND_API_KEY) {
     console.warn('[ASPIRA Email] RESEND_API_KEY tidak diset — email tidak dikirim.');
     return { ok: false, error: 'RESEND_API_KEY tidak dikonfigurasi.' };
   }
 
+  const rawRecipients = Array.isArray(payload.to) ? payload.to : [payload.to];
+  const originalToList = rawRecipients.join(', ');
+
+  // Percobaan 1: Kirim ke penerima asli
   try {
     const { error } = await resend.emails.send({
       from: FROM_EMAIL,
-      to: Array.isArray(payload.to) ? payload.to : [payload.to],
+      to: rawRecipients,
       subject: payload.subject,
       html: payload.html,
     });
 
-    if (error) {
-      console.error('[ASPIRA Email] Resend error:', error);
-      return { ok: false, error: error.message };
+    if (!error) {
+      return { ok: true, deliveredTo: originalToList };
     }
 
-    return { ok: true };
+    // Jika ditolak karena batasan testing domain Resend (hanya boleh kirim ke email pemilik akun)
+    const isDomainRestriction =
+      typeof error.message === 'string' &&
+      (error.message.includes('only send testing emails') ||
+        error.message.includes('verify a domain'));
+
+    if (isDomainRestriction) {
+      console.warn(
+        `[ASPIRA Email] Resend test domain aktif. Mengalihkan pengiriman dari [${originalToList}] ke [${RESEND_TEST_RECIPIENT}].`
+      );
+
+      // Tambahkan info banner simulasi tujuan ke dalam email
+      const testingHtmlBanner = `
+        <div style="background:#fffbeb; border:1px solid #fef3c7; border-left:4px solid #f59e0b; padding:12px 16px; margin-bottom:20px; border-radius:8px; font-size:12px; color:#92400e;">
+          ⚠️ <strong>Mode Pengujian Resend (Domain Belum Terverifikasi)</strong><br/>
+          Email ini seharusnya ditujukan kepada: <code>${originalToList}</code>.<br/>
+          Dialihkan otomatis ke email akun pengembang (<code>${RESEND_TEST_RECIPIENT}</code>) agar tetap dapat diterima dan diuji.
+        </div>
+      `;
+
+      const fallbackSubject = `[Uji Coba → ${originalToList}] ${payload.subject}`;
+      const fallbackHtml = payload.html.replace(
+        '<div class="body">',
+        `<div class="body">${testingHtmlBanner}`
+      );
+
+      const fallbackRes = await resend.emails.send({
+        from: FROM_EMAIL,
+        to: [RESEND_TEST_RECIPIENT],
+        subject: fallbackSubject,
+        html: fallbackHtml,
+      });
+
+      if (!fallbackRes.error) {
+        return {
+          ok: true,
+          deliveredTo: `${RESEND_TEST_RECIPIENT} (Dialihkan dari ${originalToList} - Mode Uji Coba Resend)`,
+        };
+      }
+
+      return { ok: false, error: fallbackRes.error.message };
+    }
+
+    return { ok: false, error: error.message };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Unknown error';
     console.error('[ASPIRA Email] Exception:', msg);

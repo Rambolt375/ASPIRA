@@ -53,7 +53,11 @@ export async function POST(req: NextRequest) {
         html,
       });
 
-      return NextResponse.json({ ok: result.ok, error: result.error });
+      return NextResponse.json({
+        ok: result.ok,
+        deliveredTo: result.deliveredTo,
+        error: result.error,
+      });
     }
 
     if (type === 'STATUS_UPDATE') {
@@ -80,7 +84,11 @@ export async function POST(req: NextRequest) {
         html,
       });
 
-      return NextResponse.json({ ok: result.ok, error: result.error });
+      return NextResponse.json({
+        ok: result.ok,
+        deliveredTo: result.deliveredTo,
+        error: result.error,
+      });
     }
 
     return NextResponse.json({ error: 'Unknown email type' }, { status: 400 });

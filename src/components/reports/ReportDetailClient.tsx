@@ -104,7 +104,7 @@ export default function ReportDetailClient({ initialReport }: Props) {
       const json = await res.json();
       if (json.ok) {
         setEmailStatus('sent');
-        setEmailStatusMsg(`✅ Email notifikasi terkirim ke ${authorEmail}${extras.length ? ` +${extras.length} penerima lain` : ''}`);
+        setEmailStatusMsg(`✅ Email notifikasi terkirim ke ${json.deliveredTo || authorEmail}`);
       } else {
         setEmailStatus('error');
         setEmailStatusMsg(`⚠️ Email gagal: ${json.error}`);
