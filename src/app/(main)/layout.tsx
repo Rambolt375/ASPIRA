@@ -6,13 +6,13 @@ import { AppSidebar, MobileHeader, MobileNav } from '@/components/layout/AppShel
  */
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-150">
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-150">
       {/* Mobile top bar — sticky, h-14 (56px) */}
       <MobileHeader />
 
       <div className="flex">
         {/* Desktop sidebar */}
-        <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 transition-colors duration-150 z-20">
+        <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 border-r border-neutral-200 dark:border-neutral-800 bg-surface dark:bg-neutral-900 transition-colors duration-150 z-20">
           <AppSidebar />
         </aside>
 

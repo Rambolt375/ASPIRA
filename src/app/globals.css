@@ -3,45 +3,218 @@
 /* Enable class-based dark mode in Tailwind CSS v4 */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ─── Design tokens ───────────────────────────────────────────────────────────
+   Civic palette: emerald (brand), amber (accent), slate (neutral).
+   All colors are defined as CSS variables so light/dark mode can swap them
+   without duplicating utility classes across every component.
+   60-30-10 rule: neutral surfaces dominate, brand green guides action,
+   amber is reserved for pending/attention states.
+   ──────────────────────────────────────────────────────────────────────────── */
+
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
+  --surface: #ffffff;
+  --surface-muted: #f8fafc;
+  --surface-raised: #ffffff;
+  --border: #e2e8f0;
+  --border-subtle: #f1f5f9;
+
+  --brand-50: #ecfdf5;
+  --brand-100: #d1fae5;
+  --brand-200: #a7f3d0;
+  --brand-300: #6ee7b7;
+  --brand-400: #34d399;
+  --brand-500: #10b981;
+  --brand-600: #059669;
+  --brand-700: #047857;
+  --brand-800: #065f46;
+  --brand-900: #064e3b;
+  --brand-950: #022c22;
+
+  --accent-50: #fffbeb;
+  --accent-100: #fef3c7;
+  --accent-200: #fde68a;
+  --accent-500: #f59e0b;
+  --accent-600: #d97706;
+  --accent-700: #b45309;
+
+  --danger-50: #fef2f2;
+  --danger-100: #fee2e2;
+  --danger-200: #fecaca;
+  --danger-500: #ef4444;
+  --danger-600: #dc2626;
+  --danger-700: #b91c1c;
+
+  --info-50: #eff6ff;
+  --info-100: #dbeafe;
+  --info-200: #bfdbfe;
+  --info-500: #3b82f6;
+  --info-600: #2563eb;
+
+  --neutral-50: #f8fafc;
+  --neutral-100: #f1f5f9;
+  --neutral-200: #e2e8f0;
+  --neutral-300: #cbd5e1;
+  --neutral-400: #94a3b8;
+  --neutral-500: #64748b;
+  --neutral-600: #475569;
+  --neutral-700: #334155;
+  --neutral-800: #1e293b;
+  --neutral-900: #0f172a;
+  --neutral-950: #020617;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  --shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+  --shadow-sm: 0 1px 2px 0 rgb(15 23 42 / 0.06), 0 1px 3px 0 rgb(15 23 42 / 0.04);
+  --shadow-md: 0 4px 6px -1px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.06);
+  --shadow-lg: 0 12px 24px -8px rgb(15 23 42 / 0.12), 0 4px 8px -4px rgb(15 23 42 / 0.08);
+
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .dark {
   --background: #090d16;
   --foreground: #f1f5f9;
+  --surface: #0f172a;
+  --surface-muted: #0b1120;
+  --surface-raised: #111c30;
+  --border: #1e293b;
+  --border-subtle: #0f172a;
+
+  --neutral-50: #0b1120;
+  --neutral-100: #111827;
+  --neutral-200: #1e293b;
+  --neutral-300: #334155;
+  --neutral-400: #475569;
+  --neutral-500: #64748b;
+  --neutral-600: #94a3b8;
+  --neutral-700: #cbd5e1;
+  --neutral-800: #e2e8f0;
+  --neutral-900: #f1f5f9;
+  --neutral-950: #f8fafc;
+
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.45), 0 1px 3px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.35);
+  --shadow-lg: 0 12px 24px -8px rgb(0 0 0 / 0.6), 0 4px 8px -4px rgb(0 0 0 / 0.4);
 }
 
+/* Expose tokens to Tailwind's utility generation */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-raised: var(--surface-raised);
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+  --color-brand-950: var(--brand-950);
+
+  --color-accent-50: var(--accent-50);
+  --color-accent-100: var(--accent-100);
+  --color-accent-200: var(--accent-200);
+  --color-accent-500: var(--accent-500);
+  --color-accent-600: var(--accent-600);
+  --color-accent-700: var(--accent-700);
+
+  --color-danger-50: var(--danger-50);
+  --color-danger-100: var(--danger-100);
+  --color-danger-200: var(--danger-200);
+  --color-danger-500: var(--danger-500);
+  --color-danger-600: var(--danger-600);
+  --color-danger-700: var(--danger-700);
+
+  --color-info-50: var(--info-50);
+  --color-info-100: var(--info-100);
+  --color-info-200: var(--info-200);
+  --color-info-500: var(--info-500);
+  --color-info-600: var(--info-600);
+
+  --color-neutral-50: var(--neutral-50);
+  --color-neutral-100: var(--neutral-100);
+  --color-neutral-200: var(--neutral-200);
+  --color-neutral-300: var(--neutral-300);
+  --color-neutral-400: var(--neutral-400);
+  --color-neutral-500: var(--neutral-500);
+  --color-neutral-600: var(--neutral-600);
+  --color-neutral-700: var(--neutral-700);
+  --color-neutral-800: var(--neutral-800);
+  --color-neutral-900: var(--neutral-900);
+  --color-neutral-950: var(--neutral-950);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  --ease-standard: var(--ease-standard);
 }
 
 html, body {
   background: var(--background);
   color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Shared dark-mode fallback for legacy screens with zero-specificity :where() */
-:where(.dark) .bg-white:not([class*="dark:bg-"]) { background-color: #0f172a; }
-:where(.dark) .bg-slate-50:not([class*="dark:bg-"]) { background-color: #090d16; }
-:where(.dark) .bg-slate-100:not([class*="dark:bg-"]) { background-color: #1e293b; }
-:where(.dark) .border-slate-100:not([class*="dark:border-"]) { border-color: #1e293b; }
-:where(.dark) .border-slate-200:not([class*="dark:border-"]) { border-color: #334155; }
-:where(.dark) .border-slate-300:not([class*="dark:border-"]) { border-color: #475569; }
-:where(.dark) .text-slate-900:not([class*="dark:text-"]) { color: #f8fafc; }
-:where(.dark) .text-slate-800:not([class*="dark:text-"]) { color: #e2e8f0; }
-:where(.dark) .text-slate-700:not([class*="dark:text-"]) { color: #cbd5e1; }
-:where(.dark) .text-slate-600:not([class*="dark:text-"]) { color: #94a3b8; }
-:where(.dark) .text-slate-500:not([class*="dark:text-"]) { color: #94a3b8; }
-:where(.dark) .text-slate-400:not([class*="dark:text-"]) { color: #64748b; }
+/* ─── Legacy dark-mode fallback ───────────────────────────────────────────────
+   Older screens use raw bg-white / bg-slate-* utilities without dark: variants.
+   These zero-specificity overrides keep them readable in dark mode.
+   ──────────────────────────────────────────────────────────────────────────── */
+:where(.dark) .bg-white:not([class*="dark:bg-"]) { background-color: var(--surface); }
+:where(.dark) .bg-slate-50:not([class*="dark:bg-"]) { background-color: var(--background); }
+:where(.dark) .bg-slate-100:not([class*="dark:bg-"]) { background-color: var(--neutral-100); }
+:where(.dark) .border-slate-100:not([class*="dark:border-"]) { border-color: var(--border); }
+:where(.dark) .border-slate-200:not([class*="dark:border-"]) { border-color: var(--border); }
+:where(.dark) .border-slate-300:not([class*="dark:border-"]) { border-color: var(--neutral-300); }
+:where(.dark) .text-slate-900:not([class*="dark:text-"]) { color: var(--neutral-900); }
+:where(.dark) .text-slate-800:not([class*="dark:text-"]) { color: var(--neutral-800); }
+:where(.dark) .text-slate-700:not([class*="dark:text-"]) { color: var(--neutral-700); }
+:where(.dark) .text-slate-600:not([class*="dark:text-"]) { color: var(--neutral-600); }
+:where(.dark) .text-slate-500:not([class*="dark:text-"]) { color: var(--neutral-500); }
+:where(.dark) .text-slate-400:not([class*="dark:text-"]) { color: var(--neutral-400); }
+
+/* ─── Motion & accessibility ────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Visible keyboard focus everywhere; never remove focus rings without replacing them */
+:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+}
 
 /* Prevent long labels, tables and controls from widening the viewport on phones. */
 *, *::before, *::after { box-sizing: border-box; }
@@ -52,7 +225,6 @@ table { max-width: 100%; }
   main, section, article, form, [role="dialog"] { min-width: 0; max-width: 100%; }
   pre, code { max-width: 100%; overflow-x: auto; }
 }
-
 
 /* Hide scrollbar for Chrome, Safari and Opera */
 .no-scrollbar::-webkit-scrollbar,
