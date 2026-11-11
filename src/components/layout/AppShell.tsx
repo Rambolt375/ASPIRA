@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { logoutUser } from '@/services/auth';
+import ThemeToggle from '@/components/theme/ThemeToggle';
 
 interface NavItem {
   href: string;
@@ -144,15 +145,16 @@ export function AppSidebar({ hideLogo = false, onNavigate }: { hideLogo?: boolea
 
   return (
     <aside className="flex flex-col h-full bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors">
-      {/* Logo */}
+      {/* Logo & Theme Toggle */}
       {!hideLogo && (
-        <div className="px-4 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <div className="px-4 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <Link href="/beranda" onClick={onNavigate} className="flex items-center gap-2">
             <span className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400 tracking-tight">ASPIRA</span>
             <span className="text-xs text-slate-500 dark:text-slate-400 font-medium border border-slate-200 dark:border-slate-700 rounded-full px-2 py-0.5">
               Kota Bogor
             </span>
           </Link>
+          <ThemeToggle />
         </div>
       )}
 
@@ -288,15 +290,18 @@ export function MobileHeader() {
             Kota Bogor
           </span>
         </Link>
-        <button
-          onClick={() => setOpen(true)}
-          className="p-2 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 active:bg-slate-200 transition-colors"
-          aria-label="Buka menu"
-        >
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <button
+            onClick={() => setOpen(true)}
+            className="p-2 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 active:bg-slate-200 transition-colors"
+            aria-label="Buka menu"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+          </button>
+        </div>
       </header>
 
       {/* Drawer overlay with iOS Safari GPU hardware acceleration */}

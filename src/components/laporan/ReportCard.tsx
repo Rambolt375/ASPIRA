@@ -14,11 +14,11 @@ export default function ReportCard({ report }: Props) {
   return (
     <Link
       href={`/laporan/${report.id}`}
-      className="block bg-white rounded-2xl border border-slate-200 p-4 hover:shadow-md transition-shadow space-y-3"
+      className="block bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 hover:shadow-md transition-all space-y-3"
     >
       {/* Category + status */}
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
           {report.category}
         </span>
         <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${statusStyle}`}>
@@ -27,18 +27,18 @@ export default function ReportCard({ report }: Props) {
       </div>
 
       {/* Title */}
-      <h2 className="text-base font-bold text-slate-900 line-clamp-2">{report.title}</h2>
+      <h2 className="text-base font-bold text-slate-900 dark:text-white line-clamp-2">{report.title}</h2>
 
       {/* Description */}
-      <p className="text-sm font-normal text-slate-600 line-clamp-2 leading-relaxed">{report.description}</p>
+      <p className="text-sm font-normal text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">{report.description}</p>
 
       {/* Footer */}
-      <div className="flex items-center justify-between text-xs font-semibold text-slate-600 pt-1 border-t border-slate-100">
+      <div className="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">
         <span className="flex items-center gap-1.5 truncate mr-2">
-          <MapPin size={13} className="text-emerald-600 shrink-0" />
+          <MapPin size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
           <span className="truncate">{report.address}</span>
         </span>
-        <span className="shrink-0 text-slate-500 font-medium">{new Date(report.createdAt).toLocaleDateString('id-ID')}</span>
+        <span className="shrink-0 text-slate-500 dark:text-slate-400 font-medium">{new Date(report.createdAt).toLocaleDateString('id-ID')}</span>
       </div>
 
       {/* Community confirmations */}

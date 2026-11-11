@@ -120,10 +120,10 @@ export default function KomunitasPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
             Forum & Komunitas Warga Bogor
           </h1>
-          <p className="text-xs sm:text-sm text-slate-600 font-medium mt-1">
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium mt-1">
             Ruang diskusi kolaboratif warga, berita pengumuman resmi, dan direktori promosi UMKM lokal.
           </p>
         </div>
@@ -143,7 +143,7 @@ export default function KomunitasPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-slate-200 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="border-b border-slate-200 dark:border-slate-800 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 pr-6">
           {[
             { key: 'ALL', label: 'Semua' },
@@ -157,8 +157,8 @@ export default function KomunitasPage() {
               onClick={() => setActiveTab(tab.key)}
               className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-bold whitespace-nowrap shrink-0 transition-all ${
                 activeTab === tab.key
-                  ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-200'
-                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                  ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-200 dark:ring-emerald-900'
+                  : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
               }`}
             >
               {tab.label}
@@ -171,11 +171,11 @@ export default function KomunitasPage() {
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-40 bg-white rounded-3xl border border-slate-200 animate-pulse" />
+            <div key={i} className="h-40 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 animate-pulse" />
           ))}
         </div>
       ) : posts.length === 0 ? (
-        <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 text-slate-400">
+        <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 text-slate-400">
           Belum ada postingan dalam kategori ini. Jadilah yang pertama memulai diskusi!
         </div>
       ) : (
@@ -183,24 +183,24 @@ export default function KomunitasPage() {
           {posts.map((post) => (
             <div
               key={post.id}
-              className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4 hover:border-slate-300 transition-all"
+              className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 space-y-4 hover:border-slate-300 dark:hover:border-slate-700 transition-all"
             >
               {/* Post Header */}
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-sm shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold flex items-center justify-center text-sm shrink-0">
                     {post.authorName.charAt(0)}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-900 text-sm">{post.authorName}</span>
+                      <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">{post.authorName}</span>
                       {post.authorBadge && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
                           {post.authorBadge}
                         </span>
                       )}
                     </div>
-                    <span className="text-xs text-slate-500 font-medium">
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                       {new Date(post.createdAt).toLocaleDateString('id-ID', {
                         day: 'numeric',
                         month: 'short',
@@ -213,10 +213,10 @@ export default function KomunitasPage() {
                 <span
                   className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                     post.type === 'NEWS'
-                      ? 'bg-blue-100 text-blue-700'
+                      ? 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900'
                       : post.type === 'UMKM'
-                      ? 'bg-purple-100 text-purple-700'
-                      : 'bg-slate-100 text-slate-700'
+                      ? 'bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-900'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
                   }`}
                 >
                   {post.type}
@@ -225,22 +225,22 @@ export default function KomunitasPage() {
 
               {/* Title & Content */}
               <div>
-                <h2 className="text-base sm:text-lg font-bold text-slate-900 mb-1">{post.title}</h2>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">{post.title}</h2>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">
                   {post.content}
                 </p>
               </div>
 
               {/* Actions & Voting */}
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                <div className="flex items-center gap-1 bg-slate-50 rounded-full p-1 border border-slate-200">
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 rounded-full p-1 border border-slate-200 dark:border-slate-700">
                   <button
                     type="button"
                     onClick={() => handleVote(post.id, 1)}
                     className={`px-2.5 py-1 rounded-full font-bold flex items-center gap-1 transition-colors ${
                       post.userVote === 1
                         ? 'bg-emerald-600 text-white'
-                        : 'hover:bg-slate-200 text-slate-700'
+                        : 'hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
                     }`}
                   >
                     ▲ <span>{post.upvotes}</span>
@@ -251,14 +251,14 @@ export default function KomunitasPage() {
                     className={`px-2.5 py-1 rounded-full font-bold flex items-center gap-1 transition-colors ${
                       post.userVote === -1
                         ? 'bg-red-600 text-white'
-                        : 'hover:bg-slate-200 text-slate-700'
+                        : 'hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
                     }`}
                   >
                     ▼ <span>{post.downvotes}</span>
                   </button>
                 </div>
 
-                <div className="flex items-center gap-4 text-xs font-semibold text-slate-600">
+                <div className="flex items-center gap-4 text-xs font-semibold text-slate-600 dark:text-slate-400">
                   <span>💬 {post.commentCount} Tanggapan</span>
                 </div>
               </div>
@@ -269,32 +269,32 @@ export default function KomunitasPage() {
 
       {/* Create Post Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-4 shadow-xl">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-4 shadow-xl">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-900">Buat Postingan Komunitas</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Buat Postingan Komunitas</h3>
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="text-slate-400 hover:text-slate-600 text-xl font-bold"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-xl font-bold"
               >
                 ✕
               </button>
             </div>
 
             {error && (
-              <div className="p-3 bg-red-50 text-red-700 text-xs rounded-xl border border-red-200">
+              <div className="p-3 bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300 text-xs rounded-xl border border-red-200 dark:border-red-900">
                 {error}
               </div>
             )}
 
             <form onSubmit={handleCreatePost} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">Jenis Konten</label>
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">Jenis Konten</label>
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value as PostType)}
-                  className="w-full p-3 rounded-2xl border border-slate-300 text-xs font-semibold text-slate-800 bg-white outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
+                  className="w-full p-3 rounded-2xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
                 >
                   <option value="DISCUSSION">Diskusi / Tanya Warga</option>
                   <option value="NEWS">Informasi Resmi / Pengumuman</option>
@@ -303,37 +303,37 @@ export default function KomunitasPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">Kategori / Topik (Opsional)</label>
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">Kategori / Topik (Opsional)</label>
                 <input
                   type="text"
                   placeholder="Contoh: Kuliner / Kebersihan / Transportasi"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full p-3 rounded-2xl border border-slate-300 text-xs text-slate-900 placeholder:text-slate-500 font-medium outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
+                  className="w-full p-3 rounded-2xl border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 placeholder:text-slate-500 font-medium outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">Judul Topik</label>
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">Judul Topik</label>
                 <input
                   type="text"
                   required
                   placeholder="Contoh: Info Pengalihan Arus Sekitar Kebun Raya"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full p-3 rounded-2xl border border-slate-300 text-xs text-slate-900 placeholder:text-slate-500 font-medium outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
+                  className="w-full p-3 rounded-2xl border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 placeholder:text-slate-500 font-medium outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">Isi Pesan / Penjelasan</label>
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">Isi Pesan / Penjelasan</label>
                 <textarea
                   rows={4}
                   required
                   placeholder="Tuliskan informasi atau pertanyaan Anda dengan sopan dan jelas..."
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  className="w-full p-3 rounded-2xl border border-slate-300 text-xs text-slate-900 placeholder:text-slate-500 font-medium outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
+                  className="w-full p-3 rounded-2xl border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 placeholder:text-slate-500 font-medium outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
                 />
               </div>
 

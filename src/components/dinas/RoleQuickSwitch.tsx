@@ -89,7 +89,7 @@ export default function RoleQuickSwitch() {
                 onClick={() => handleSwitch(p)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                   isActive
-                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm font-bold'
+                    ? 'bg-slate-900 text-white dark:bg-emerald-600 dark:text-white shadow-sm font-bold'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
                 }`}
               >
