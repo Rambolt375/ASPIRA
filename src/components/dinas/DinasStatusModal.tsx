@@ -9,6 +9,10 @@ interface ReportSummary {
   title: string;
   status: ReportStatus;
   assignedAgency?: string | null;
+  author?: {
+    name: string;
+    email?: string | null;
+  };
 }
 
 interface StatusModalProps {
@@ -72,6 +76,7 @@ export default function DinasStatusModal({
   const [compressing, setCompressing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showUrlInput, setShowUrlInput] = useState(false);
+  const [notifyTargetEmail, setNotifyTargetEmail] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -189,6 +194,39 @@ export default function DinasStatusModal({
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Gagal memperbarui status laporan.');
+
+      // Trigger email notification to reporter + any extra CC email
+      try {
+        const authorEmail = report.author?.email;
+        const extraEmails = notifyTargetEmail
+          .split(/[,;\s]+/)
+          .map((e) => e.trim())
+          .filter(Boolean);
+
+        if (authorEmail || extraEmails.length > 0) {
+          void fetch('/api/email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'STATUS_UPDATE',
+              reportId: report.id,
+              ticketNumber: report.ticketNumber,
+              title: report.title,
+              authorName: report.author?.name || 'Warga Bogor',
+              authorEmail: authorEmail || extraEmails[0],
+              extraEmails,
+              newStatus: targetStatus,
+              oldStatusLabel: report.status,
+              actorName: 'Dinas / Petugas Lapangan',
+              agency: report.assignedAgency || 'Pemerintah Kota Bogor',
+              note: finalNote,
+              progressPercent: progressPercent ?? (targetStatus === 'DIATASI' ? 100 : undefined),
+            }),
+          });
+        }
+      } catch {
+        // Silent fail: email dispatch does not block modal completion
+      }
 
       onSuccess();
       onClose();
@@ -458,6 +496,23 @@ export default function DinasStatusModal({
               placeholder="Contoh: Tim regu 2 telah menambal lubang menggunakan cold-mix asphalt 3 drum. Dilakukan pemadatan baby roller. Kondisi jalan aman dilalui."
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-colors placeholder:text-slate-400"
             />
+          </div>
+
+          {/* 6. Email Notifikasi Warga & Target CC */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+              📧 Salinan Notifikasi Email (Opsional)
+            </label>
+            <input
+              type="text"
+              placeholder={`Default: ${report.author?.email || 'email pelapor'} (tambah email lain dipisah koma)`}
+              value={notifyTargetEmail}
+              onChange={(e) => setNotifyTargetEmail(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-colors placeholder:text-slate-400"
+            />
+            <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+              Email pelapor ({report.author?.email || '—'}) otomatis menerima pembaruan status dan berita acara dinas ini.
+            </p>
           </div>
 
           {/* Buttons */}

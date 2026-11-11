@@ -70,6 +70,7 @@ export async function getReport(id: string): Promise<Report | null> {
     })),
     authorId: r.authorId,
     authorName: r.author?.name || 'Warga',
+    authorEmail: r.author?.email || null,
     assignedAgency: r.assignedAgency,
     slaDeadline: r.slaDeadline,
     verification: r.verification,
@@ -114,7 +115,7 @@ export async function getReports(params?: {
     media: { fileUrl: string }[];
     status: ReportStatus;
     authorId: string;
-    author?: { name: string };
+    author?: { name: string; email?: string | null };
     assignedAgency?: string;
     slaDeadline?: string;
     confirmations?: { userId: string }[];
@@ -136,6 +137,7 @@ export async function getReports(params?: {
     statusHistory: [],
     authorId: r.authorId,
     authorName: r.author?.name || 'Warga',
+    authorEmail: r.author?.email || null,
     assignedAgency: r.assignedAgency,
     slaDeadline: r.slaDeadline,
     communityConfirmations: (r.confirmations || []).map((c) => c.userId),

@@ -168,6 +168,7 @@ export default function BuatLaporanPage() {
   const [lat, setLat] = useState<number>(-6.5971);
   const [lng, setLng] = useState<number>(106.806);
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [targetEmail, setTargetEmail] = useState('');
 
   // Media states with Canvas Compression
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
@@ -468,6 +469,32 @@ export default function BuatLaporanPage() {
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Gagal mengirim laporan.');
+
+      // Kirim email konfirmasi tanda terima resmi via Resend
+      try {
+        const extraEmails = targetEmail
+          .split(/[,;\s]+/)
+          .map((e) => e.trim())
+          .filter(Boolean);
+
+        void fetch('/api/email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'REPORT_CONFIRMED',
+            reportId: data.report.id,
+            ticketNumber: data.report.ticketNumber,
+            title: data.report.title,
+            authorName: user.name || 'Warga Bogor',
+            authorEmail: user.email,
+            extraEmails,
+            category: data.report.category,
+            address: data.report.address,
+          }),
+        });
+      } catch {
+        // Silent fail: email dispatch does not block redirect
+      }
 
       triggerHaptic('success');
       router.push(`/laporan/${data.report.id}`);
@@ -989,6 +1016,20 @@ export default function BuatLaporanPage() {
                   className="min-h-[44px] text-base sm:text-sm"
                   required
                 />
+              </div>
+
+              <div>
+                <Input
+                  type="email"
+                  label="Email Notifikasi Salinan (Opsional)"
+                  placeholder={`Contoh: ryo@example.com (default ke akun: ${user?.email || 'email Anda'})`}
+                  value={targetEmail}
+                  onChange={(e) => setTargetEmail(e.target.value)}
+                  className="min-h-[44px] text-base sm:text-sm"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Salinan tanda terima tiket dan setiap pembaruan progres akan dikirim ke akun Anda ({user?.email || '—'}) dan email target di atas.
+                </p>
               </div>
 
               <div className="pt-1">

@@ -205,6 +205,7 @@ export async function getReportDetails(identifier: string) {
         select: {
           id: true,
           name: true,
+          email: true,
           avatarUrl: true,
           role: true,
           reputationLevel: true,

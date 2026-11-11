@@ -8,11 +8,11 @@ import {
   HardHat,
   Shield,
   UserCheck,
-  Smartphone,
   Mail,
   Sparkles,
   AlertCircle,
   Info,
+  Send,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { Button } from '@/components/ui';
@@ -20,7 +20,6 @@ import { REPORT_STATUSES, STATUS_PIPELINE, SEVERITY_LEVELS } from '@/constants/c
 import { STAGE_ROLES, getReportSlaInfo } from '@/constants/pipelineStages';
 import { palette } from '@/constants/theme';
 import type { Report, ReportStatus } from '@/types';
-import NotificationSimulatorModal, { NotificationDispatch } from './NotificationSimulatorModal';
 
 interface Props {
   initialReport: Report;
@@ -39,62 +38,12 @@ export default function ReportDetailClient({ initialReport }: Props) {
   const [agencyName, setAgencyName] = useState(report.assignedAgency || 'Dinas PUPR Kota Bogor');
   const [error, setError] = useState<string | null>(null);
 
-  // Notification simulation state
-  const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
-  const [whatsappEnabled, setWhatsappEnabled] = useState(true);
-  const [emailEnabled, setEmailEnabled] = useState(true);
-  const [activeToast, setActiveToast] = useState<{
-    id: string;
-    channel: 'WHATSAPP' | 'EMAIL';
-    title: string;
-    message: string;
-  } | null>(null);
-
-  // Seed initial notification dispatch history from report status history
-  const [dispatches, setDispatches] = useState<NotificationDispatch[]>(() => {
-    const list: NotificationDispatch[] = [];
-    const history = initialReport.statusHistory || [];
-
-    history.forEach((h, idx) => {
-      const stage = STAGE_ROLES[h.status] || STAGE_ROLES.DITERIMA;
-      const timeStr = new Date(h.timestamp).toLocaleTimeString('id-ID', {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-
-      // WA dispatch
-      list.push({
-        id: `wa-init-${idx}`,
-        channel: 'WHATSAPP',
-        recipient: '+62 812-9844-8891',
-        statusTrigger: h.status,
-        title: `Pembaruan Laporan: ${stage.label}`,
-        message: `Halo Bapak/Ibu ${initialReport.authorName}, laporan Anda kini berstatus "${stage.label}". Ditangani oleh: ${stage.roleName}.`,
-        timestamp: timeStr,
-        delivered: true,
-        read: idx < history.length - 1,
-        actorRole: stage.roleName,
-        assignedAgency: initialReport.assignedAgency || undefined,
-      });
-
-      // Email dispatch
-      list.push({
-        id: `email-init-${idx}`,
-        channel: 'EMAIL',
-        recipient: user?.email || 'pelapor@kotabogor.go.id',
-        statusTrigger: h.status,
-        title: `[ASPIRA Bogor] Status Laporan #${initialReport.ticketNumber} diperbarui`,
-        message: `Laporan Anda telah diperbarui menjadi "${stage.label}". Penanggung Jawab: ${stage.roleName}.`,
-        timestamp: timeStr,
-        delivered: true,
-        read: true,
-        actorRole: stage.roleName,
-        assignedAgency: initialReport.assignedAgency || undefined,
-      });
-    });
-
-    return list.reverse();
-  });
+  // Notification state (email)
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<'idle' | 'sent' | 'error'>('idle');
+  const [emailStatusMsg, setEmailStatusMsg] = useState<string | null>(null);
+  // Extra email recipients (CC) that the dinas can add
+  const [extraEmails, setExtraEmails] = useState<string>('');
 
   // Check if current user already confirmed
   const userConfirmed = user ? report.communityConfirmations?.includes(user.id) : false;
@@ -110,69 +59,62 @@ export default function ReportDetailClient({ initialReport }: Props) {
       ? 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1200&q=80'
       : null);
 
-  // Dispatch simulation trigger function
-  function triggerMockDispatch(
-    status: ReportStatus,
-    channel: 'WHATSAPP' | 'EMAIL' | 'BOTH',
-    customNote?: string
-  ) {
-    const stage = STAGE_ROLES[status] || STAGE_ROLES.DITERIMA;
-    const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-    const newDispatches: NotificationDispatch[] = [];
+  // Send real email notification via /api/email
+  async function sendNotificationEmail(opts: {
+    type: 'REPORT_CONFIRMED' | 'STATUS_UPDATE';
+    newStatus?: ReportStatus;
+    oldStatusLabel?: string;
+    actorName?: string;
+    agency?: string;
+    note?: string;
+    progressPercent?: number;
+  }) {
+    const authorEmail = report.authorEmail || user?.email;
+    if (!authorEmail) return;
 
-    if ((channel === 'WHATSAPP' || channel === 'BOTH') && whatsappEnabled) {
-      const waItem: NotificationDispatch = {
-        id: `wa-${Date.now()}-${Math.random()}`,
-        channel: 'WHATSAPP',
-        recipient: '+62 812-9844-8891',
-        statusTrigger: status,
-        title: `Pembaruan WhatsApp: ${stage.label}`,
-        message: `Halo Bapak/Ibu ${report.authorName},\nLaporan #${report.ticketNumber} kini berstatus *"${stage.label}"*.\n👷 Ditangani oleh: *${stage.roleName}* (${stage.roleBadge})\n${customNote ? `📝 Catatan: "${customNote}"\n` : ''}⏱️ SLA: ${stage.slaDefault}`,
-        timestamp: timeStr,
-        delivered: true,
-        read: false,
-        actorRole: stage.roleName,
-        assignedAgency: agencyName || report.assignedAgency || undefined,
-      };
-      newDispatches.push(waItem);
+    setEmailSending(true);
+    setEmailStatus('idle');
+    try {
+      const extras = extraEmails
+        .split(/[,;\s]+/)
+        .map((e) => e.trim())
+        .filter(Boolean);
 
-      setActiveToast({
-        id: waItem.id,
-        channel: 'WHATSAPP',
-        title: '📱 WhatsApp Terkirim Real-Time',
-        message: `Status baru "${stage.label}" dikirim via gateway resmi ke +62 812-****-8891.`,
+      const res = await fetch('/api/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: opts.type,
+          reportId: report.id,
+          ticketNumber: report.ticketNumber,
+          title: report.title,
+          authorName: report.authorName,
+          authorEmail,
+          extraEmails: extras,
+          category: report.category,
+          address: report.address,
+          oldStatusLabel: opts.oldStatusLabel,
+          newStatus: opts.newStatus,
+          actorName: opts.actorName,
+          agency: opts.agency,
+          note: opts.note,
+          progressPercent: opts.progressPercent,
+        }),
       });
-    }
-
-    if ((channel === 'EMAIL' || channel === 'BOTH') && emailEnabled) {
-      const emailItem: NotificationDispatch = {
-        id: `email-${Date.now()}-${Math.random()}`,
-        channel: 'EMAIL',
-        recipient: user?.email || 'pelapor@kotabogor.go.id',
-        statusTrigger: status,
-        title: `[ASPIRA Bogor] Laporan #${report.ticketNumber} diperbarui: ${stage.label}`,
-        message: `Laporan Anda telah ditangani oleh ${stage.roleName}. Estimasi selesai sesuai SLA: ${stage.slaDefault}.`,
-        timestamp: timeStr,
-        delivered: true,
-        read: false,
-        actorRole: stage.roleName,
-        assignedAgency: agencyName || report.assignedAgency || undefined,
-      };
-      newDispatches.push(emailItem);
-
-      if (channel === 'EMAIL') {
-        setActiveToast({
-          id: emailItem.id,
-          channel: 'EMAIL',
-          title: '✉️ Email Pemberitahuan Terkirim',
-          message: `Ringkasan penanganan telah dikirimkan ke kotak masuk email warga.`,
-        });
+      const json = await res.json();
+      if (json.ok) {
+        setEmailStatus('sent');
+        setEmailStatusMsg(`✅ Email notifikasi terkirim ke ${authorEmail}${extras.length ? ` +${extras.length} penerima lain` : ''}`);
+      } else {
+        setEmailStatus('error');
+        setEmailStatusMsg(`⚠️ Email gagal: ${json.error}`);
       }
-    }
-
-    if (newDispatches.length > 0) {
-      setDispatches((prev) => [...newDispatches, ...prev]);
-      setTimeout(() => setActiveToast(null), 4500);
+    } catch {
+      setEmailStatus('error');
+      setEmailStatusMsg('⚠️ Tidak dapat mengirim email.');
+    } finally {
+      setEmailSending(false);
+      setTimeout(() => { setEmailStatus('idle'); setEmailStatusMsg(null); }, 6000);
     }
   }
 
@@ -224,10 +166,22 @@ export default function ReportDetailClient({ initialReport }: Props) {
       // Refresh report data
       const refreshRes = await fetch(`/api/reports/${report.id}`);
       const refreshJson = await refreshRes.json();
-      setReport(refreshJson.report);
+      const updatedReport = refreshJson.report;
+      setReport(updatedReport);
 
-      // Trigger instant real-time notification dispatch!
-      triggerMockDispatch(newStatus, 'BOTH', statusNote);
+      // Send real email notification to reporter
+      const oldStatusLabel = REPORT_STATUSES[report.status]?.label ?? report.status;
+      const nextPipelineIdx = STATUS_PIPELINE.indexOf(newStatus);
+      const nextProgressPercent = Math.round(((nextPipelineIdx + 1) / STATUS_PIPELINE.length) * 100);
+      void sendNotificationEmail({
+        type: 'STATUS_UPDATE',
+        newStatus,
+        oldStatusLabel,
+        actorName: user.name || user.email,
+        agency: agencyName,
+        note: statusNote || undefined,
+        progressPercent: nextProgressPercent,
+      });
 
       setStatusNote('');
       setEvidenceUrl('');
@@ -251,29 +205,12 @@ export default function ReportDetailClient({ initialReport }: Props) {
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-8 pb-24 space-y-8">
-      {/* Toast Alert for Real-time Notification Dispatches */}
-      {activeToast && (
-        <div className="fixed top-20 right-4 sm:right-8 z-50 max-w-sm w-full bg-slate-900 text-white rounded-2xl p-4 shadow-2xl border border-emerald-500/40 flex items-start gap-3 animate-in slide-in-from-top-4 duration-300">
-          <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 shrink-0">
-            {activeToast.channel === 'WHATSAPP' ? (
-              <Smartphone className="w-5 h-5 text-emerald-400" />
-            ) : (
-              <Mail className="w-5 h-5 text-blue-400" />
-            )}
-          </div>
-          <div className="flex-1 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-white">{activeToast.title}</span>
-              <span className="text-[10px] text-emerald-400 font-mono">Real-Time</span>
-            </div>
-            <p className="text-[11px] text-slate-300 leading-snug">{activeToast.message}</p>
-          </div>
-          <button
-            onClick={() => setActiveToast(null)}
-            className="text-slate-400 hover:text-white text-xs"
-          >
-            ✕
-          </button>
+      {/* Email status toast */}
+      {emailStatusMsg && (
+        <div className={`fixed top-20 right-4 sm:right-8 z-50 max-w-sm w-full rounded-2xl p-4 shadow-2xl border flex items-start gap-3 animate-in slide-in-from-top-4 duration-300 ${emailStatus === 'sent' ? 'bg-emerald-900 border-emerald-500/40 text-white' : 'bg-red-900 border-red-500/40 text-white'}`}>
+          <Mail className="w-5 h-5 shrink-0 mt-0.5" />
+          <span className="text-xs font-medium leading-snug">{emailStatusMsg}</span>
+          <button onClick={() => setEmailStatusMsg(null)} className="ml-auto text-slate-300 hover:text-white text-xs">✕</button>
         </div>
       )}
 
@@ -337,23 +274,14 @@ export default function ReportDetailClient({ initialReport }: Props) {
               </div>
             </div>
 
-            {/* Notification Simulator Trigger Button */}
-            <button
-              onClick={() => setIsNotifModalOpen(true)}
-              className="px-3.5 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-bold flex items-center gap-2 transition-all shadow-sm group"
-            >
-              <div className="relative">
-                <Bell className="w-4 h-4 text-emerald-300 group-hover:scale-110 transition-transform" />
-                {dispatches.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-slate-900" />
-                )}
-              </div>
-              <span className="hidden sm:inline">Notifikasi Pelapor</span>
-              <span className="sm:hidden">Notif</span>
-              <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/30 text-emerald-200 text-[10px] font-mono">
-                {dispatches.length}
+            {/* Email Notification Status Badge */}
+            <div className="px-3 py-1.5 rounded-2xl bg-white/10 text-white border border-white/20 text-xs font-medium flex items-center gap-2">
+              <Mail className="w-3.5 h-3.5 text-emerald-300" />
+              <span className="hidden sm:inline">Notifikasi Email:</span>
+              <span className="text-emerald-300 font-mono text-[11px] truncate max-w-[150px]">
+                {report.authorEmail || user?.email || 'Terkoneksi'}
               </span>
-            </button>
+            </div>
           </div>
         </div>
 
@@ -451,30 +379,18 @@ export default function ReportDetailClient({ initialReport }: Props) {
 
         {/* Quick notification status banner */}
         <div className="pt-2 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-300">
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1.5 font-medium">
-              <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
-              WhatsApp:{' '}
-              <strong className={whatsappEnabled ? 'text-emerald-300' : 'text-slate-400'}>
-                {whatsappEnabled ? 'Aktif (+62 812-****-8891)' : 'Nonaktif'}
-              </strong>
-            </span>
-            <span className="text-slate-600">•</span>
-            <span className="flex items-center gap-1.5 font-medium">
-              <Mail className="w-3.5 h-3.5 text-blue-400" />
-              Email:{' '}
-              <strong className={emailEnabled ? 'text-blue-300' : 'text-slate-400'}>
-                {emailEnabled ? 'Aktif' : 'Nonaktif'}
+          <div className="flex items-center gap-2">
+            <Mail className="w-3.5 h-3.5 text-blue-400" />
+            <span className="font-medium">
+              Notifikasi email:{' '}
+              <strong className="text-blue-300">
+                {report.authorEmail || user?.email || 'email pelapor'}
               </strong>
             </span>
           </div>
-
-          <button
-            onClick={() => setIsNotifModalOpen(true)}
-            className="text-xs text-emerald-300 hover:text-emerald-200 underline font-semibold flex items-center gap-1"
-          >
-            Buka Simulasi Notifikasi Instan →
-          </button>
+          {emailSending && (
+            <span className="text-xs text-emerald-300 animate-pulse">📧 Mengirim email…</span>
+          )}
         </div>
       </section>
 
@@ -878,9 +794,28 @@ export default function ReportDetailClient({ initialReport }: Props) {
           )}
 
           <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-800">
-            <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
+            <div className="space-y-2 w-full">
+              {/* CC email field */}
+              <label className="block text-xs font-semibold text-slate-300">
+                📧 Kirim Notifikasi Email Ke (opsional, pisah dengan koma)
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={extraEmails}
+                  onChange={(e) => setExtraEmails(e.target.value)}
+                  placeholder={`${report.authorEmail || user?.email || 'email pelapor'} (default) + tambah email lain…`}
+                  className="flex-1 p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs placeholder:text-slate-500 outline-none focus:border-emerald-500"
+                />
+              </div>
+              <p className="text-[10px] text-slate-500">
+                Email pelapor ({report.authorEmail || user?.email || '—'}) selalu diikutsertakan secara otomatis.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 text-[11px] text-slate-400">
               <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Notifikasi instan otomatis terkirim via WhatsApp & Email warga saat disimpan.</span>
+              <span>Email notifikasi otomatis terkirim saat status disimpan.</span>
             </div>
 
             <button
@@ -889,27 +824,12 @@ export default function ReportDetailClient({ initialReport }: Props) {
               onClick={handleStatusTransition}
               className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-colors flex items-center gap-1.5"
             >
-              <span>{transitioning ? 'Menyimpan...' : 'Perbarui Status Resmi →'}</span>
+              <Send className="w-3.5 h-3.5" />
+              <span>{transitioning ? 'Menyimpan...' : 'Perbarui Status & Kirim Email →'}</span>
             </button>
           </div>
         </div>
       )}
-
-      {/* ────────────────────────────────────────────────────────────────────────── */}
-      {/* 5. NOTIFICATION SIMULATION MODAL                                           */}
-      {/* ────────────────────────────────────────────────────────────────────────── */}
-      <NotificationSimulatorModal
-        isOpen={isNotifModalOpen}
-        onClose={() => setIsNotifModalOpen(false)}
-        report={report}
-        dispatches={dispatches}
-        onTriggerSimulate={(status, channel) => triggerMockDispatch(status, channel)}
-        whatsappEnabled={whatsappEnabled}
-        emailEnabled={emailEnabled}
-        onToggleWhatsapp={setWhatsappEnabled}
-        onToggleEmail={setEmailEnabled}
-        userEmail={user?.email || 'pelapor@kotabogor.go.id'}
-      />
     </main>
   );
 }
