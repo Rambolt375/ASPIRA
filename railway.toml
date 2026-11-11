@@ -5,6 +5,9 @@ buildCommand = "npm ci && npx prisma generate && npm run build"
 [deploy]
 startCommand = "npx prisma migrate deploy && node .next/standalone/server.js"
 healthcheckPath = "/"
-healthcheckTimeout = 60
+healthcheckTimeout = 120
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
+
+[[services]]
+name = "web"
