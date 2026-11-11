@@ -20,7 +20,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             - Mobile: offset top for sticky MobileHeader (pt-14) + bottom for MobileNav (pb-24)
             - Desktop: no top offset (sidebar not sticky-top), bottom padding 6
         */}
-        <main className="flex-1 md:ml-64 pb-24 md:pb-8 min-h-screen overflow-x-hidden">
+        <main className="flex-1 min-w-0 md:ml-64 pt-14 md:pt-0 pb-24 md:pb-8 min-h-screen overflow-x-hidden">
           {children}
         </main>
       </div>

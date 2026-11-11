@@ -28,6 +28,14 @@
 
 - [x] PostgreSQL/Prisma foundation, authentication, reporting lifecycle, community, gamification, maps, City Pulse, AI assistant, bilingual UI, theme support, and PWA manifest.
 
+## ✅ Theme & Responsive UI Improvements (2026-11-11)
+
+- [x] Added shared dark-mode fallbacks for legacy components that were missing `dark:` Tailwind variants, including backgrounds, borders, text colors, and muted surfaces.
+- [x] Updated the citizen dashboard cards, report list, quick actions, category panel, resolution panel, guest CTA, and community teaser to use explicit light/dark styles.
+- [x] Added mobile overflow protections: `box-sizing`, media sizing constraints, `min-w-0` content boundaries, and constrained code/table/form content.
+- [x] Added the mobile top-header offset to the main content layout so content is not hidden behind the fixed/sticky header.
+- [x] Improved small-screen report cards, dashboard grids, and community links with wrapping/truncation behavior.
+
 ## Validation
 
 - [x] `npm run lint` — passed with existing warnings only.

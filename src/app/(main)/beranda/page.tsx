@@ -60,14 +60,14 @@ function StatCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-5 flex items-start gap-2.5 sm:gap-4 min-w-0 shadow-xs">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 sm:p-5 flex items-start gap-2.5 sm:gap-4 min-w-0 shadow-xs transition-colors">
       <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
         {icon}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-lg sm:text-2xl font-black text-slate-900 leading-tight">{value}</p>
-        <p className="text-xs sm:text-sm font-bold text-slate-800 truncate mt-0.5">{label}</p>
-        {sub && <p className="text-[10px] sm:text-xs text-slate-500 font-medium truncate mt-0.5">{sub}</p>}
+        <p className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">{value}</p>
+        <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 truncate mt-0.5">{label}</p>
+        {sub && <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5">{sub}</p>}
       </div>
     </div>
   );
@@ -85,21 +85,21 @@ function ReportCard({ report }: { report: Report }) {
   return (
     <Link
       href={`/laporan/${report.id}`}
-      className="flex items-start gap-4 p-4 rounded-2xl border border-slate-200 bg-white hover:border-emerald-300 hover:shadow-sm transition-all group"
+      className="flex items-start gap-4 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-xs transition-all group min-w-0"
     >
-      <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-xl shrink-0 border border-slate-100">
+      <div className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-xl shrink-0 border border-slate-100 dark:border-slate-700">
         {categoryIcon[report.category] ?? '📋'}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-slate-900 line-clamp-2 leading-snug group-hover:text-emerald-700 transition-colors">
+        <p className="text-sm font-semibold text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
           {report.title}
         </p>
-        <p className="text-xs text-slate-600 font-medium truncate mt-0.5">
+        <p className="text-xs text-slate-600 dark:text-slate-400 font-medium truncate mt-0.5">
           📍 {report.address || 'Kota Bogor'}
         </p>
-        <div className="flex items-center gap-2 mt-2">
+        <div className="flex items-center gap-2 mt-2 flex-wrap">
           <StatusBadge status={report.status} />
-          <span className="text-xs text-slate-500 font-medium">{timeAgo(report.createdAt)}</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{timeAgo(report.createdAt)}</span>
         </div>
       </div>
     </Link>
@@ -196,10 +196,10 @@ export default function BerandaPage() {
       <section>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">City Pulse</h2>
-            <p className="text-xs text-slate-400">Kondisi kota saat ini</p>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">City Pulse</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Kondisi kota saat ini</p>
           </div>
-          <Link href="/pantau" className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">
+          <Link href="/pantau" className="text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 font-medium">
             Lihat detail →
           </Link>
         </div>
@@ -207,14 +207,14 @@ export default function BerandaPage() {
         {loading ? (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-5 h-20 sm:h-24 animate-pulse">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-slate-100 rounded-xl mb-2" />
-                <div className="h-3 bg-slate-100 rounded w-2/3" />
+              <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 sm:p-5 h-20 sm:h-24 animate-pulse">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-slate-100 dark:bg-slate-800 rounded-xl mb-2" />
+                <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-2/3" />
               </div>
             ))}
           </div>
         ) : error ? (
-          <div className="rounded-2xl bg-red-50 border border-red-200 p-5 text-sm text-red-700">
+          <div className="rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 p-5 text-sm text-red-700 dark:text-red-300">
             {error}
           </div>
         ) : (
@@ -223,9 +223,9 @@ export default function BerandaPage() {
               label="Total Laporan"
               value={total}
               sub="sepanjang waktu"
-              color="bg-slate-100"
+              color="bg-slate-100 dark:bg-slate-800"
               icon={
-                <svg className="w-5 h-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="w-5 h-5 text-slate-600 dark:text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
                 </svg>
               }
@@ -234,9 +234,9 @@ export default function BerandaPage() {
               label="Diatasi"
               value={resolved}
               sub={`${resolutionRate}% resolusi`}
-              color="bg-emerald-50"
+              color="bg-emerald-50 dark:bg-emerald-950/60"
               icon={
-                <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               }
@@ -245,9 +245,9 @@ export default function BerandaPage() {
               label="Dalam Proses"
               value={inProgress}
               sub="sedang ditangani"
-              color="bg-amber-50"
+              color="bg-amber-50 dark:bg-amber-950/60"
               icon={
-                <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               }
@@ -256,9 +256,9 @@ export default function BerandaPage() {
               label="Menunggu"
               value={pending}
               sub="perlu verifikasi"
-              color="bg-blue-50"
+              color="bg-blue-50 dark:bg-blue-950/60"
               icon={
-                <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
                 </svg>
               }
@@ -269,21 +269,21 @@ export default function BerandaPage() {
 
       {/* ── Quick actions ─────────────────────────────────────────────────── */}
       <section>
-        <h2 className="text-lg font-bold text-slate-900 mb-4">Aksi Cepat</h2>
+        <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Aksi Cepat</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { href: '/lapor', icon: '📝', label: 'Buat Laporan', color: 'bg-emerald-50 border-emerald-200 hover:border-emerald-400' },
-            { href: '/komunitas', icon: '👥', label: 'Komunitas', color: 'bg-blue-50 border-blue-200 hover:border-blue-400' },
-            { href: '/peta', icon: '🗺️', label: 'Peta Laporan', color: 'bg-amber-50 border-amber-200 hover:border-amber-400' },
-            { href: '/asisten', icon: '🤖', label: 'Tanya AI', color: 'bg-purple-50 border-purple-200 hover:border-purple-400' },
+            { href: '/lapor', icon: '📝', label: 'Buat Laporan', color: 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 hover:border-emerald-400' },
+            { href: '/komunitas', icon: '👥', label: 'Komunitas', color: 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800 hover:border-blue-400' },
+            { href: '/peta', icon: '🗺️', label: 'Peta Laporan', color: 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800 hover:border-amber-400' },
+            { href: '/asisten', icon: '🤖', label: 'Tanya AI', color: 'bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800 hover:border-purple-400' },
           ].map((action) => (
             <Link
               key={action.href}
               href={action.href}
-              className={`flex flex-col items-center gap-2 p-4 rounded-2xl border text-center transition-all hover:shadow-sm ${action.color}`}
+              className={`flex flex-col items-center gap-2 p-4 rounded-2xl border text-center transition-all hover:shadow-xs min-w-0 ${action.color}`}
             >
               <span className="text-2xl">{action.icon}</span>
-              <span className="text-xs font-semibold text-slate-700">{action.label}</span>
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate max-w-full">{action.label}</span>
             </Link>
           ))}
         </div>
@@ -292,10 +292,10 @@ export default function BerandaPage() {
       <div className="grid lg:grid-cols-3 gap-6">
 
         {/* ── Recent reports ───────────────────────────────────────────────── */}
-        <section className="lg:col-span-2">
+        <section className="lg:col-span-2 min-w-0">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-slate-900">Laporan Terbaru</h2>
-            <Link href="/laporan" className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Laporan Terbaru</h2>
+            <Link href="/laporan" className="text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 font-medium">
               Lihat semua →
             </Link>
           </div>
@@ -303,23 +303,23 @@ export default function BerandaPage() {
           {loading ? (
             <div className="space-y-3">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="bg-white rounded-2xl border border-slate-200 p-4 flex gap-4 animate-pulse">
-                  <div className="w-10 h-10 bg-slate-100 rounded-xl shrink-0" />
+                <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 flex gap-4 animate-pulse">
+                  <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-xl shrink-0" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-3 bg-slate-100 rounded w-3/4" />
-                    <div className="h-3 bg-slate-100 rounded w-1/2" />
+                    <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-3/4" />
+                    <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-1/2" />
                   </div>
                 </div>
               ))}
             </div>
           ) : recentReports.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 text-center">
               <p className="text-3xl mb-3">📭</p>
-              <p className="text-sm font-semibold text-slate-700 mb-1">Belum ada laporan</p>
-              <p className="text-xs text-slate-400 mb-4">Jadilah yang pertama melaporkan masalah infrastruktur.</p>
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Belum ada laporan</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Jadilah yang pertama melaporkan masalah infrastruktur.</p>
               <Link
                 href="/lapor"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600 hover:text-emerald-700"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700"
               >
                 Buat laporan pertama →
               </Link>
@@ -334,19 +334,19 @@ export default function BerandaPage() {
         </section>
 
         {/* ── Sidebar panel ────────────────────────────────────────────────── */}
-        <section className="space-y-5">
+        <section className="space-y-5 min-w-0">
 
           {/* Category breakdown */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5">
-            <h3 className="text-sm font-bold text-slate-900 mb-4">Kategori Teratas</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">Kategori Teratas</h3>
             {loading ? (
               <div className="space-y-3">
                 {[...Array(4)].map((_, i) => (
-                  <div key={i} className="h-3 bg-slate-100 rounded animate-pulse" />
+                  <div key={i} className="h-3 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
                 ))}
               </div>
             ) : topCategories.length === 0 ? (
-              <p className="text-xs text-slate-400 text-center py-4">Belum ada data</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-4">Belum ada data</p>
             ) : (
               <div className="space-y-3">
                 {topCategories.map(([cat, count]) => (
@@ -354,12 +354,12 @@ export default function BerandaPage() {
                     <span className="text-lg">{categoryIcon[cat] ?? '📋'}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-medium text-slate-700 truncate">
+                        <span className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">
                           {cat.replace('_', ' ')}
                         </span>
-                        <span className="text-xs text-slate-400 shrink-0 ml-2">{count}</span>
+                        <span className="text-xs text-slate-400 dark:text-slate-500 shrink-0 ml-2">{count}</span>
                       </div>
-                      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-emerald-500 rounded-full"
                           style={{ width: `${Math.round((count / total) * 100)}%` }}
@@ -374,11 +374,11 @@ export default function BerandaPage() {
 
           {/* Resolution ring */}
           {!loading && total > 0 && (
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 text-center">
-              <h3 className="text-sm font-bold text-slate-900 mb-4">Tingkat Resolusi</h3>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 text-center shadow-xs">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">Tingkat Resolusi</h3>
               <div className="relative inline-flex items-center justify-center w-24 h-24 mb-3">
                 <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 36 36">
-                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f1f5f9" strokeWidth="3" />
+                  <circle cx="18" cy="18" r="15.9" fill="none" className="stroke-slate-100 dark:stroke-slate-800" strokeWidth="3" />
                   <circle
                     cx="18" cy="18" r="15.9" fill="none"
                     stroke="#059669"
@@ -389,10 +389,10 @@ export default function BerandaPage() {
                   />
                 </svg>
                 <div className="text-center">
-                  <p className="text-xl font-bold text-slate-900">{resolutionRate}%</p>
+                  <p className="text-xl font-bold text-slate-900 dark:text-white">{resolutionRate}%</p>
                 </div>
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 {resolved} dari {total} laporan berhasil diatasi
               </p>
             </div>
@@ -400,10 +400,10 @@ export default function BerandaPage() {
 
           {/* CTA for guests */}
           {!user && (
-            <div className="bg-linear-to-br from-emerald-50 to-teal-50 rounded-2xl border border-emerald-200 p-5 text-center">
+            <div className="bg-linear-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800 p-5 text-center">
               <p className="text-2xl mb-2">👋</p>
-              <p className="text-sm font-semibold text-slate-800 mb-1">Bergabunglah sekarang</p>
-              <p className="text-xs text-slate-500 mb-4">
+              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-1">Bergabunglah sekarang</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
                 Daftar gratis dan mulai berkontribusi untuk kota yang lebih baik.
               </p>
               <Link
@@ -418,13 +418,13 @@ export default function BerandaPage() {
       </div>
 
       {/* ── Community teaser ─────────────────────────────────────────────── */}
-      <section className="bg-white rounded-2xl border border-slate-200 p-6">
+      <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xs">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">Komunitas</h2>
-            <p className="text-xs text-slate-400">Diskusi, berita, dan promosi lokal</p>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Komunitas</h2>
+            <p className="text-xs text-slate-400 dark:text-slate-500">Diskusi, berita, dan promosi lokal</p>
           </div>
-          <Link href="/komunitas" className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">
+          <Link href="/komunitas" className="text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 font-medium">
             Lihat semua →
           </Link>
         </div>
@@ -437,14 +437,14 @@ export default function BerandaPage() {
             <Link
               key={item.label}
               href={item.href}
-              className="flex items-start gap-3 p-4 rounded-xl border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/30 transition-all group"
+              className="flex items-start gap-3 p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-emerald-200 dark:hover:border-emerald-700 hover:bg-emerald-50/30 dark:hover:bg-slate-800/60 transition-all group min-w-0"
             >
               <span className="text-xl">{item.icon}</span>
-              <div>
-                <p className="text-sm font-semibold text-slate-800 group-hover:text-emerald-700 transition-colors">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">
                   {item.label}
                 </p>
-                <p className="text-xs text-slate-400">{item.desc}</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 truncate">{item.desc}</p>
               </div>
             </Link>
           ))}

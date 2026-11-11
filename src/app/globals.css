@@ -29,6 +29,31 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Shared dark-mode fallback for legacy screens with zero-specificity :where() */
+:where(.dark) .bg-white:not([class*="dark:bg-"]) { background-color: #0f172a; }
+:where(.dark) .bg-slate-50:not([class*="dark:bg-"]) { background-color: #090d16; }
+:where(.dark) .bg-slate-100:not([class*="dark:bg-"]) { background-color: #1e293b; }
+:where(.dark) .border-slate-100:not([class*="dark:border-"]) { border-color: #1e293b; }
+:where(.dark) .border-slate-200:not([class*="dark:border-"]) { border-color: #334155; }
+:where(.dark) .border-slate-300:not([class*="dark:border-"]) { border-color: #475569; }
+:where(.dark) .text-slate-900:not([class*="dark:text-"]) { color: #f8fafc; }
+:where(.dark) .text-slate-800:not([class*="dark:text-"]) { color: #e2e8f0; }
+:where(.dark) .text-slate-700:not([class*="dark:text-"]) { color: #cbd5e1; }
+:where(.dark) .text-slate-600:not([class*="dark:text-"]) { color: #94a3b8; }
+:where(.dark) .text-slate-500:not([class*="dark:text-"]) { color: #94a3b8; }
+:where(.dark) .text-slate-400:not([class*="dark:text-"]) { color: #64748b; }
+
+/* Prevent long labels, tables and controls from widening the viewport on phones. */
+*, *::before, *::after { box-sizing: border-box; }
+img, svg, video, canvas { max-width: 100%; }
+button, input, select, textarea { max-width: 100%; }
+table { max-width: 100%; }
+@media (max-width: 767px) {
+  main, section, article, form, [role="dialog"] { min-width: 0; max-width: 100%; }
+  pre, code { max-width: 100%; overflow-x: auto; }
+}
+
+
 /* Hide scrollbar for Chrome, Safari and Opera */
 .no-scrollbar::-webkit-scrollbar,
 .scrollbar-none::-webkit-scrollbar {

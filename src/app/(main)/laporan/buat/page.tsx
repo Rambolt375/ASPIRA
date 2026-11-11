@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import { Button, Input } from '@/components/ui';
+import NativeCameraModal, { type CapturedPhoto, compressFile } from '@/components/camera/NativeCameraModal';
 import { REPORT_CATEGORIES, SEVERITY_LEVELS } from '@/constants/categories';
 import type { ReportCategory, SeverityLevel, AiTriageResult } from '@/types';
 
@@ -41,68 +42,6 @@ function findNearestBogorKecamatan(latitude: number, longitude: number): string 
   }
 
   return nearest;
-}
-
-// Client-side Canvas Image Compression (< 500KB)
-function compressCanvas(
-  source: HTMLImageElement | HTMLVideoElement,
-  maxWidth = 1280,
-  maxHeight = 720,
-  quality = 0.75
-): { dataUrl: string; sizeKb: number } {
-  const srcWidth = 'videoWidth' in source ? source.videoWidth || 640 : source.naturalWidth || source.width;
-  const srcHeight = 'videoHeight' in source ? source.videoHeight || 480 : source.naturalHeight || source.height;
-
-  // Preserve aspect ratio within 1280x720 envelope (adapts to portrait or landscape)
-  const isPortrait = srcHeight > srcWidth;
-  const boundW = isPortrait ? maxHeight : maxWidth;
-  const boundH = isPortrait ? maxWidth : maxHeight;
-  const scale = Math.min(boundW / srcWidth, boundH / srcHeight, 1);
-  const targetW = Math.max(1, Math.round(srcWidth * scale));
-  const targetH = Math.max(1, Math.round(srcHeight * scale));
-
-  const canvas = document.createElement('canvas');
-  canvas.width = targetW;
-  canvas.height = targetH;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Canvas context tidak tersedia');
-
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(source, 0, 0, targetW, targetH);
-
-  const dataUrl = canvas.toDataURL('image/jpeg', quality);
-  const base64Content = dataUrl.split(',')[1] || '';
-  const sizeBytes = Math.round((base64Content.length * 3) / 4);
-  const sizeKb = Math.max(1, Math.round(sizeBytes / 1024));
-
-  return { dataUrl, sizeKb };
-}
-
-function compressFile(
-  file: File,
-  maxWidth = 1280,
-  maxHeight = 720,
-  quality = 0.75
-): Promise<{ dataUrl: string; sizeKb: number }> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        try {
-          const result = compressCanvas(img, maxWidth, maxHeight, quality);
-          resolve(result);
-        } catch (err) {
-          reject(err);
-        }
-      };
-      img.onerror = () => reject(new Error('Gagal memuat berkas gambar'));
-      img.src = e.target?.result as string;
-    };
-    reader.onerror = () => reject(new Error('Gagal membaca berkas'));
-    reader.readAsDataURL(file);
-  });
 }
 
 // Subtle haptic feedback for smartphone users
@@ -148,9 +87,7 @@ export default function BuatLaporanPage() {
   const [compressedSizeKb, setCompressedSizeKb] = useState<number | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
   const [isDirectCapture, setIsDirectCapture] = useState(false);
-  const [isCameraActive, setIsCameraActive] = useState(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
 
   // GPS Feedback States
   const [gpsLoading, setGpsLoading] = useState(false);
@@ -161,15 +98,6 @@ export default function BuatLaporanPage() {
   const [aiResult, setAiResult] = useState<(AiTriageResult & { authenticityScore?: number }) | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Stop camera when unmounting or leaving step 2
-  useEffect(() => {
-    return () => {
-      if (mediaStreamRef.current) {
-        mediaStreamRef.current.getTracks().forEach((t) => t.stop());
-      }
-    };
-  }, []);
 
   function goToStep(nextStep: number) {
     triggerHaptic('light');
@@ -242,51 +170,13 @@ export default function BuatLaporanPage() {
     );
   }
 
-  // Handle direct camera capture
-  async function startCamera() {
-    try {
-      triggerHaptic('light');
-      setIsCameraActive(true);
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-      });
-      mediaStreamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-      }
-    } catch {
-      setError('Tidak dapat mengakses kamera peramban. Silakan unggah foto dari galeri.');
-      setIsCameraActive(false);
-    }
-  }
-
-  function capturePhoto() {
-    if (!videoRef.current) return;
-    triggerHaptic('medium');
-    setIsCompressing(true);
-
-    try {
-      // Compress via offscreen HTML5 canvas to max 1280x720, quality 0.75
-      const { dataUrl, sizeKb } = compressCanvas(videoRef.current, 1280, 720, 0.75);
-      setImageDataUrl(dataUrl);
-      setCompressedSizeKb(sizeKb);
-      setIsDirectCapture(true);
-      stopCamera();
-      triggerHaptic('success');
-    } catch {
-      setError('Gagal memproses foto dari kamera.');
-    } finally {
-      setIsCompressing(false);
-    }
-  }
-
-  function stopCamera() {
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((t) => t.stop());
-      mediaStreamRef.current = null;
-    }
-    setIsCameraActive(false);
+  // Handle camera capture from NativeCameraModal
+  function handleCameraCapture(photo: CapturedPhoto) {
+    setImageDataUrl(photo.dataUrl);
+    setCompressedSizeKb(photo.sizeKb);
+    setIsDirectCapture(photo.isDirectCapture);
+    setIsCameraModalOpen(false);
+    triggerHaptic('success');
   }
 
   // Handle gallery file input with automatic Canvas Compression
@@ -619,37 +509,17 @@ export default function BuatLaporanPage() {
         {step === 2 && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Lampirkan Bukti Foto Lapangan</h2>
-              <p className="text-sm text-slate-500 mt-1">
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Lampirkan Bukti Foto Lapangan</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                 Foto dikompresi otomatis di perangkat agar hemat kuota dan proses unggah instan pada koneksi seluler 3G/4G.
               </p>
             </div>
 
-            {/* Direct Camera Viewfinder */}
-            {isCameraActive ? (
-              <div className="relative rounded-2xl overflow-hidden bg-black aspect-video flex items-center justify-center shadow-inner">
-                <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
-                <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-3 px-4">
-                  <button
-                    type="button"
-                    onClick={capturePhoto}
-                    disabled={isCompressing}
-                    className="min-h-[48px] px-6 py-3 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-xl flex items-center gap-2 active:scale-95 transition-all touch-manipulation"
-                  >
-                    <span>📸</span> {isCompressing ? 'Mengompresi...' : 'Ambil Foto'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={stopCamera}
-                    className="min-h-[48px] px-5 py-3 rounded-full bg-slate-900/80 hover:bg-slate-900 text-white font-semibold text-sm active:scale-95 transition-all touch-manipulation"
-                  >
-                    Batal
-                  </button>
-                </div>
-              </div>
-            ) : imageDataUrl ? (
+            {/* Native fullscreen camera modal; capture and gallery paths stay canvas-compressed. */}
+            {imageDataUrl ? (
               <div className="space-y-3">
-                <div className="relative rounded-2xl overflow-hidden border border-slate-200 aspect-video bg-slate-50 flex items-center justify-center shadow-xs">
+                <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 aspect-video bg-slate-50 dark:bg-slate-900 flex items-center justify-center shadow-xs">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={imageDataUrl} alt="Bukti Foto Terkompresi" className="w-full h-full object-contain" />
 
                   {/* Authenticity Badge */}
@@ -658,7 +528,7 @@ export default function BuatLaporanPage() {
                       className={`px-3 py-1 rounded-full text-xs font-bold shadow-sm ${
                         isDirectCapture
                           ? 'bg-emerald-600 text-white'
-                          : 'bg-slate-700 text-white'
+                          : 'bg-slate-700 dark:bg-slate-800 text-white'
                       }`}
                     >
                       {isDirectCapture ? '✓ Kamera Langsung (Otentik)' : '📁 Unggahan Galeri'}
@@ -674,24 +544,28 @@ export default function BuatLaporanPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-1">
+                <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
-                      onClick={startCamera}
-                      className="min-h-[44px] text-xs text-emerald-600 hover:text-emerald-700 font-bold active:scale-95 transition-all"
+                      onClick={() => {
+                        triggerHaptic('light');
+                        setError(null);
+                        setIsCameraModalOpen(true);
+                      }}
+                      className="min-h-[44px] text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 font-bold active:scale-95 transition-all"
                     >
                       📷 Ambil ulang foto
                     </button>
-                    <span className="text-slate-300">•</span>
-                    <label className="min-h-[44px] flex items-center text-xs text-slate-600 hover:text-slate-900 font-medium cursor-pointer active:scale-95 transition-all">
+                    <span className="text-slate-300 dark:text-slate-700">•</span>
+                    <label className="min-h-[44px] flex items-center text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 font-medium cursor-pointer active:scale-95 transition-all">
                       <span>Pilih foto lain</span>
                       <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
                     </label>
                   </div>
                   {compressedSizeKb && (
-                    <span className="text-[11px] font-semibold text-slate-500">
-                      Ukuran: {compressedSizeKb} KB (Resolusi HD 1280x720)
+                    <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                      Ukuran: {compressedSizeKb} KB (Resolusi HD)
                     </span>
                   )}
                 </div>
@@ -700,21 +574,25 @@ export default function BuatLaporanPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <button
                   type="button"
-                  onClick={startCamera}
-                  className="min-h-[120px] p-6 rounded-2xl border-2 border-dashed border-emerald-400 bg-emerald-50/40 hover:bg-emerald-50 active:bg-emerald-100/60 flex flex-col items-center justify-center gap-2.5 transition-all group touch-manipulation active:scale-[0.98]"
+                  onClick={() => {
+                    triggerHaptic('light');
+                    setError(null);
+                    setIsCameraModalOpen(true);
+                  }}
+                  className="min-h-[120px] p-6 rounded-2xl border-2 border-dashed border-emerald-400 dark:border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 active:bg-emerald-100/60 flex flex-col items-center justify-center gap-2.5 transition-all group touch-manipulation active:scale-[0.98]"
                 >
                   <span className="text-4xl group-hover:scale-110 transition-transform">📸</span>
                   <div className="text-center">
-                    <p className="font-bold text-slate-900 text-sm">Buka Kamera Langsung</p>
-                    <p className="text-xs text-slate-500 mt-0.5">Kompresi otomatis ke &lt; 500 KB</p>
+                    <p className="font-bold text-slate-900 dark:text-white text-sm">Buka Kamera Langsung</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Mode Kamera Smartphone Native &amp; Kompresi &lt; 500 KB</p>
                   </div>
                 </button>
 
-                <label className="min-h-[120px] p-6 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 active:bg-slate-200/60 flex flex-col items-center justify-center gap-2.5 cursor-pointer transition-all group touch-manipulation active:scale-[0.98]">
+                <label className="min-h-[120px] p-6 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800/50 active:bg-slate-200/60 flex flex-col items-center justify-center gap-2.5 cursor-pointer transition-all group touch-manipulation active:scale-[0.98]">
                   <span className="text-4xl group-hover:scale-110 transition-transform">🖼️</span>
                   <div className="text-center">
-                    <p className="font-bold text-slate-900 text-sm">Pilih dari Galeri</p>
-                    <p className="text-xs text-slate-500 mt-0.5">Kompresi kanvas 1280x720 otomatis</p>
+                    <p className="font-bold text-slate-900 dark:text-white text-sm">Pilih dari Galeri</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Kompresi kanvas HD otomatis</p>
                   </div>
                   <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
                 </label>
@@ -722,7 +600,7 @@ export default function BuatLaporanPage() {
             )}
 
             {isCompressing && (
-              <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-700 flex items-center gap-2 animate-pulse">
+              <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-xs text-blue-700 dark:text-blue-300 flex items-center gap-2 animate-pulse">
                 <span>🔄</span>
                 <span>Mengompresi gambar pada kanvas HTML5 ke format JPEG hemat kuota...</span>
               </div>
@@ -1000,6 +878,13 @@ export default function BuatLaporanPage() {
           )}
         </div>
       </div>
+
+      {/* Native Smartphone Camera Overlay HUD */}
+      <NativeCameraModal
+        isOpen={isCameraModalOpen}
+        onClose={() => setIsCameraModalOpen(false)}
+        onCapture={handleCameraCapture}
+      />
     </main>
   );
 }
